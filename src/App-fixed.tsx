@@ -8,12 +8,6 @@ import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import Dashboard from './pages/Dashboard';
 import LandingPage from './pages/LandingPage';
-import AdminPanel from './pages/AdminPanel';
-import BusinessList from './components/business/BusinessList';
-import EmployeeList from './components/employees/EmployeeList';
-import PayrollModule from './components/payroll/PayrollModule';
-import TaxModule from './components/tax/TaxModule';
-import TransactionList from './components/transactions/TransactionList';
 
 const theme = createTheme({
   palette: {
@@ -36,6 +30,22 @@ const theme = createTheme({
       fontWeight: 500,
     },
   },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        },
+      },
+    },
+  },
 });
 
 function App() {
@@ -45,89 +55,57 @@ function App() {
       <AuthProvider>
         <Router>
           <Routes>
-            {/* Landing Page */}
             <Route path="/" element={<LandingPage />} />
-            
-            {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            
-            {/* Protected Routes */}
-            <Route
-              path="/dashboard"
+            <Route 
+              path="/dashboard" 
               element={
                 <ProtectedRoute>
                   <Dashboard />
                 </ProtectedRoute>
-              }
+              } 
             />
-            
-            {/* Super Admin Route */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <AdminPanel />
-                </ProtectedRoute>
-              }
-            />
-            {/* Business Management */}
-            <Route
-              path="/landingpage"
-              element={
-                <ProtectedRoute>                  
-                  <LandingPage />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Placeholder routes for future components */}
             <Route
               path="/businesses"
               element={
                 <ProtectedRoute>
-                  <BusinessList />
+                  <div>Business Management (Coming Soon)</div>
                 </ProtectedRoute>
               }
             />
-            
             <Route
               path="/employees"
               element={
                 <ProtectedRoute>
-                  <EmployeeList />
+                  <div>Employee Management (Coming Soon)</div>
                 </ProtectedRoute>
               }
             />
-            
-            <Route
-              path="/transactions"
-              element={
-                <ProtectedRoute>
-                  <TransactionList />
-                </ProtectedRoute>
-              }
-            />
-            
             <Route
               path="/payroll"
               element={
                 <ProtectedRoute>
-                  <PayrollModule />
+                  <div>Payroll (Coming Soon)</div>
                 </ProtectedRoute>
               }
             />
-            
+            <Route
+              path="/transactions"
+              element={
+                <ProtectedRoute>
+                  <div>Transactions (Coming Soon)</div>
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/tax"
               element={
                 <ProtectedRoute>
-                  <TaxModule />
+                  <div>Tax Reports (Coming Soon)</div>
                 </ProtectedRoute>
               }
             />
-            
-            {/* 404 catch all */}
             <Route path="*" element={<LandingPage />} />
           </Routes>
         </Router>
