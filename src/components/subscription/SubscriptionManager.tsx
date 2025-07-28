@@ -37,7 +37,7 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ businessId })
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const plans = [
+  const plans: SubscriptionPlan[] = [
     {
       id: 'basic',
       name: 'Basic',
@@ -47,7 +47,8 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ businessId })
         { name: 'Basic Payroll Processing', enabled: true },
         { name: 'Basic Reporting', enabled: true },
         { name: 'Up to 10 Employees', enabled: true },
-      ]
+      ],
+      billingCycle: 'monthly'
     },
     {
       id: 'premium',
@@ -59,7 +60,8 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ businessId })
         { name: 'Advanced Reporting', enabled: true },
         { name: 'Tax Calculation', enabled: true },
         { name: 'Up to 50 Employees', enabled: true },
-      ]
+      ],
+      billingCycle: 'monthly'
     },
     {
       id: 'enterprise',
@@ -73,7 +75,8 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ businessId })
         { name: 'Custom Reports', enabled: true },
         { name: 'API Access', enabled: true },
         { name: 'Unlimited Employees', enabled: true },
-      ]
+      ],
+      billingCycle: 'monthly'
     }
   ];
 
