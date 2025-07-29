@@ -64,7 +64,7 @@ const LandingPage: React.FC = () => {
       <AppBar position="static" elevation={0} sx={{ backgroundColor: 'white', borderBottom: '1px solid #e0e0e0' }}>
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: theme.palette.primary.main, fontWeight: 'bold' }}>
-            Account Easy Jamaica
+            Account Easy
           </Typography>
           <Button 
             color="primary" 
@@ -112,7 +112,7 @@ const LandingPage: React.FC = () => {
               >
                 Financial Management
                 <br />
-                Made Easy for Jamaica
+                Made Easy for your Business
               </Typography>
               <Typography 
                 variant="h5" 
@@ -264,7 +264,7 @@ const LandingPage: React.FC = () => {
               paragraph
               sx={{ mb: 4 }}
             >
-              Join hundreds of Jamaica businesses already using Account Easy to streamline their operations
+              Join hundreds of businesses already using Account Easy to streamline their operations
             </Typography>
             <Button 
               variant="contained" 
