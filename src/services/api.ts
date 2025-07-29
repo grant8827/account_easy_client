@@ -38,7 +38,7 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
           const response = await axios.post(
-            `${process.env.REACT_APP_API_URL || 'https://accounteasyserver-production-8481.up.railway.app/'}/auth/refresh`,
+            `${process.env.REACT_APP_API_URL || 'https://accounteasyserver-production-8481.up.railway.app/api'}/auth/refresh`,
             { refreshToken }
           );
 
