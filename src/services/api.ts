@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'https://accounteasyserver-production.up.railway.app/api',
+  baseURL: process.env.REACT_APP_API_URL || 'https://accounteasyserver-production-8481.up.railway.app/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -38,7 +38,7 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
           const response = await axios.post(
-            `${process.env.REACT_APP_API_URL || 'https://accounteasyserver-production.up.railway.app/'}/auth/refresh`,
+            `${process.env.REACT_APP_API_URL || 'https://accounteasyserver-production-8481.up.railway.app/'}/auth/refresh`,
             { refreshToken }
           );
 
