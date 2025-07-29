@@ -1,14 +1,26 @@
-# Build stage
-FROM node:16 AS builder
+FROM node:16-alpine
+
 WORKDIR /app
+
+# Copy package files
 COPY package*.json ./
+COPY craco.config.js ./
+
+# Install dependencies
 RUN npm install
+RUN npm install -g serve
+
+# Copy source code
 COPY . .
+
+# Build the app
 RUN npm run build
 
-# Production stage
-FROM nginx:alpine
-COPY --from=builder /app/build /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Set environment variable for the port
+ENV PORT=3000
+
+# Expose the port
+EXPOSE 3000
+
+# Start the app using serve
+CMD ["npm", "run", "serve"]
