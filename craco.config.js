@@ -1,14 +1,32 @@
 module.exports = {
-  devServer: {
-    setupMiddlewares: (middlewares, devServer) => {
-      // Your custom middleware setup here if needed
-      return middlewares;
+  webpack: {
+    configure: {
+      resolve: {
+        fallback: {
+          path: false,
+          os: false,
+          crypto: false,
+          stream: false,
+          buffer: false,
+          util: false,
+          process: false
+        }
+      },
+      ignoreWarnings: [
+        function ignoreSourcemapsloaderWarnings(warning) {
+          return (
+            warning.module &&
+            warning.module.resource.includes('node_modules') &&
+            warning.details &&
+            warning.details.includes('source-map-loader')
+          );
+        },
+      ],
     },
   },
-  webpack: {
-    configure: (webpackConfig) => {
-      // Your webpack customizations here if needed
-      return webpackConfig;
+  devServer: {
+    setupMiddlewares: (middlewares, { app }) => {
+      return middlewares;
     },
   },
 };
