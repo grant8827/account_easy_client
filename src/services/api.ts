@@ -14,7 +14,9 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token && token !== 'undefined' && token !== 'null') {
-      config.headers.Authorization = `Bearer ${token.trim()}`;
+      // Ensure token is properly formatted
+      const cleanToken = token.trim();
+      config.headers.Authorization = cleanToken.startsWith('Bearer ') ? cleanToken : `Bearer ${cleanToken}`;
     }
     // Ensure Content-Type is set
     config.headers['Content-Type'] = 'application/json';

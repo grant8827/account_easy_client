@@ -27,6 +27,7 @@ import {
   DialogContent,
   DialogActions
 } from '@mui/material';
+import { useAuth } from '../../context/AuthContext';
 import {
   Add,
   Search,
@@ -97,9 +98,10 @@ interface Employee {
 }
 
 const EmployeeList: React.FC = () => {
+  const { user } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -129,11 +131,20 @@ const EmployeeList: React.FC = () => {
   const fetchEmployees = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/employees');
+      const businessId = user?.selectedBusiness;
+      
+      if (!businessId) {
+        setError('No business selected');
+        setEmployees([]);
+        return;
+      }
+      
+      const response = await api.get(`/employees/business/${businessId}`);
       setEmployees(response.data.employees || []);
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch employees');
+      setEmployees([]);
     } finally {
       setLoading(false);
     }
