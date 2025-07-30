@@ -190,12 +190,28 @@ const BusinessForm: React.FC<BusinessFormProps> = ({
           city: formData.city,
           parish: formData.parish,
           postalCode: formData.postalCode,
-          country: formData.country
+          country: formData.country || 'Jamaica'
         },
-        contact: {
+        contactInfo: {
           phone: formData.phone,
           email: formData.email,
           website: formData.website || undefined
+        },
+        payrollSettings: {
+          payPeriod: 'monthly',
+          payDay: 25,
+          taxCalculationMethod: 'standard'
+        },
+        taxSettings: {
+          gctRegistered: false,
+          payeRegistered: true,
+          nisRegistered: true,
+          fiscalYearEnd: '12-31'
+        },
+        settings: {
+          currency: 'JMD',
+          timeZone: 'America/Jamaica',
+          dateFormat: 'MM/DD/YYYY'
         }
       };
 
@@ -208,7 +224,18 @@ const BusinessForm: React.FC<BusinessFormProps> = ({
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.message || `Failed to ${mode} business`);
+      const message = err.response?.data?.message;
+      const errors = err.response?.data?.errors;
+      
+      if (errors && Array.isArray(errors)) {
+        setError(errors.join('\n'));
+      } else if (message) {
+        setError(message);
+      } else {
+        setError(`Failed to ${mode} business. Please try again.`);
+      }
+
+      console.error('Business creation error:', err.response?.data || err.message);
     } finally {
       setLoading(false);
     }
