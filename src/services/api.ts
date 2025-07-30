@@ -33,31 +33,49 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Only handle 401 errors from API endpoints (not for static files)
+    if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url.startsWith('/api')) {
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-          const response = await axios.post(
-            `${process.env.REACT_APP_API_URL || 'https://accounteasyserver-production-8481.up.railway.app/api'}/auth/refresh`,
-            { refreshToken }
-          );
+        const currentToken = localStorage.getItem('token');
+        if (!currentToken) {
+          throw new Error('No token available');
+        }
 
-          const { token } = response.data;
+        // Try to get a new token using the current token
+        const response = await axios.post(
+          `${process.env.REACT_APP_API_URL || 'https://accounteasyserver-production-8481.up.railway.app/api'}/auth/refresh-token`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${currentToken}`
+            }
+          }
+        );
+
+        if (response.data?.data?.token) {
+          const { token } = response.data.data;
           localStorage.setItem('token', token);
 
-          // Retry the original request with new token
+          // Update the original request with new token
           originalRequest.headers.Authorization = `Bearer ${token}`;
           return api(originalRequest);
+        } else {
+          throw new Error('No new token received');
         }
-      } catch (refreshError) {
-        // Refresh failed, redirect to login
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
+      } catch (error: any) {
+        // Only clear tokens and redirect if it's a real auth failure
+        if (error.response?.status === 401) {
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        }
+        throw error;
       }
     }
+
+    // For all other errors, pass them through
+    throw error;
 
     return Promise.reject(error);
   }
