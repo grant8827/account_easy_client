@@ -16,6 +16,7 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { User } from '../../services/authService';
 
 interface LoginFormData {
   email: string;
@@ -37,9 +38,15 @@ const Login: React.FC = () => {
     clearError();
     console.log('Login attempt:', { email: data.email, password: '***' });
     try {
-      await login(data.email, data.password);
-      console.log('Login successful, navigating to dashboard');
-      navigate('/dashboard');
+      const userData = await login(data.email, data.password) as User | void;
+      console.log('Login successful, user role:', userData?.role);
+      
+      // Redirect based on user role
+      if (userData && userData.role === 'super_admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error('Login error:', error);
       // Error is handled by the context

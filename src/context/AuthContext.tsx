@@ -81,7 +81,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
 };
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User | void>;
   register: (userData: any) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
@@ -113,7 +113,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = async (email: string, password: string): Promise<User | void> => {
     dispatch({ type: 'LOGIN_START' });
     try {
       console.log('AuthContext: Attempting login for:', email);
@@ -121,6 +121,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('AuthContext: Login response:', response);
       if (response.success) {
         dispatch({ type: 'LOGIN_SUCCESS', payload: response.data.user });
+        return response.data.user;
       } else {
         dispatch({ type: 'LOGIN_FAILURE', payload: response.message });
       }
@@ -130,6 +131,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         type: 'LOGIN_FAILURE', 
         payload: error.response?.data?.message || 'Login failed' 
       });
+      throw error; // Re-throw to handle in component
     }
   };
 
