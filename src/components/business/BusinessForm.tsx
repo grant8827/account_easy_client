@@ -105,9 +105,9 @@ const BusinessForm: React.FC<BusinessFormProps> = ({
     country: business?.address?.country || 'Jamaica',
     
     // Contact Information
-    phone: business?.contact?.phone || '',
-    email: business?.contact?.email || '',
-    website: business?.contact?.website || ''
+    phone: business?.contactInfo?.phone || '',
+    email: business?.contactInfo?.email || '',
+    website: business?.contactInfo?.website || ''
   });
 
   const steps = ['Basic Information', 'Address Details', 'Contact Information'];

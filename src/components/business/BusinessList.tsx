@@ -52,7 +52,7 @@ interface Business {
     postalCode: string;
     country: string;
   };
-  contact: {
+  contactInfo: {
     phone: string;
     email: string;
     website?: string;
@@ -289,19 +289,19 @@ const BusinessList: React.FC = () => {
                     <Box display="flex" alignItems="center" mb={1}>
                       <LocationOn fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary" noWrap>
-                        {business.address.city}, {business.address.parish}
+                        {business.address?.city || 'N/A'}, {business.address?.parish || 'N/A'}
                       </Typography>
                     </Box>
                     <Box display="flex" alignItems="center" mb={1}>
                       <Phone fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary">
-                        {business.contact.phone}
+                        {business.contactInfo?.phone || 'N/A'}
                       </Typography>
                     </Box>
                     <Box display="flex" alignItems="center">
                       <Email fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary" noWrap>
-                        {business.contact.email}
+                        {business.contactInfo?.email || 'N/A'}
                       </Typography>
                     </Box>
                   </Box>

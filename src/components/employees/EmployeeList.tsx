@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -112,10 +112,6 @@ const EmployeeList: React.FC = () => {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
   useEffect(() => {
-    fetchEmployees();
-  }, []);
-
-  useEffect(() => {
     // Filter employees based on search term
     const filtered = employees.filter(employee =>
       employee.user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -128,7 +124,7 @@ const EmployeeList: React.FC = () => {
     setFilteredEmployees(filtered);
   }, [employees, searchTerm]);
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     try {
       setLoading(true);
       const businessId = user?.selectedBusiness;
@@ -148,7 +144,11 @@ const EmployeeList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.selectedBusiness]);
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, employee: Employee) => {
     setAnchorEl(event.currentTarget);
