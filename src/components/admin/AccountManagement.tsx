@@ -144,13 +144,17 @@ const AccountManagement: React.FC = () => {
   }, [statusFilter, roleFilter, tabValue]);
 
   const handleApproveUser = async (userId: string) => {
+    console.log('Attempting to approve user:', userId);
     try {
       setLoading(true);
-      await api.post(`/admin/approve-account/${userId}`);
+      console.log('Making API call to approve user...');
+      const response = await api.post(`/admin/approve-account/${userId}`);
+      console.log('Approve response:', response);
       setSuccess('Account approved successfully');
       fetchPendingUsers();
       fetchAllUsers();
     } catch (err: any) {
+      console.error('Approve error:', err);
       setError('Failed to approve account');
     } finally {
       setLoading(false);

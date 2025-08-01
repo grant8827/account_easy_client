@@ -55,7 +55,7 @@ const AdminPanel: React.FC = () => {
   const fetchAdminStats = async () => {
     try {
       const response = await api.get('/admin/stats');
-      setStats(response.data);
+      setStats(response.data.data);
     } catch (err: any) {
       setError('Failed to load admin statistics');
     } finally {
