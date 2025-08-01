@@ -102,7 +102,7 @@ const Dashboard: React.FC = () => {
       <AppBar position="static" sx={{ bgcolor: '#006633' }}>
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Account Easy - Jamaica Financial Management
+            Account Easy - Business Financial Management
           </Typography>
           <Chip 
             label={user?.role || 'User'} 

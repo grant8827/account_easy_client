@@ -61,10 +61,11 @@ const LandingPage: React.FC = () => {
   return (
     <Box sx={{ flexGrow: 1 }}>
       {/* Navigation Bar */}
-      <AppBar position="static" elevation={0} sx={{ backgroundColor: 'white', borderBottom: '1px solid #e0e0e0' }}>
+      <AppBar position="static" elevation={0} sx={{ backgroundColor: '#d9d9d9ff', justifyContent: 'space-around', borderBottom: '1px solid #e0e0e0' }}>
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: theme.palette.primary.main, fontWeight: 'bold' }}>
-            Account Easy
+           
+            <img src="/ae_logo_1.png" alt="Account Easy Logo" style={{ height: 80, width: 200, marginLeft: 8 }} />
           </Typography>
           <Button 
             color="primary" 
@@ -77,6 +78,7 @@ const LandingPage: React.FC = () => {
             variant="contained" 
             color="primary"
             onClick={() => navigate('/register')}
+            sx={{ backgroundColor: '#fac83e', color: theme.palette.primary.main, '&:hover': { backgroundColor: alpha('#fac83e', 0.9) } }}
           >
             Get Started
           </Button>
@@ -107,7 +109,8 @@ const LandingPage: React.FC = () => {
                 gutterBottom
                 sx={{ 
                   fontWeight: 'bold',
-                  fontSize: { xs: '2.5rem', md: '3.5rem' }
+                  fontSize: { xs: '2.5rem', md: '3.5rem' },
+                  color: '#fac83e'
                 }}
               >
                 Financial Management
@@ -121,7 +124,8 @@ const LandingPage: React.FC = () => {
                 sx={{ 
                   opacity: 0.9,
                   mb: 4,
-                  fontSize: { xs: '1.1rem', md: '1.25rem' }
+                  fontSize: { xs: '1.1rem', md: '1.25rem' },
+                  
                 }}
               >
                 Streamline your business finances, payroll, and tax compliance 
@@ -133,10 +137,10 @@ const LandingPage: React.FC = () => {
                   size="large"
                   onClick={() => navigate('/register')}
                   sx={{ 
-                    backgroundColor: 'white',
+                    backgroundColor: '#fac83e',
                     color: theme.palette.primary.main,
                     '&:hover': {
-                      backgroundColor: alpha('#ffffff', 0.9)
+                      backgroundColor: alpha('#eaeaeaff', 0.9)
                     },
                     py: 1.5,
                     px: 4
@@ -149,10 +153,10 @@ const LandingPage: React.FC = () => {
                   size="large"
                   onClick={() => navigate('/login')}
                   sx={{ 
-                    borderColor: 'white',
-                    color: 'white',
+                    borderColor: '#ffffff',
+                    color: '#fac83e',
                     '&:hover': {
-                      borderColor: 'white',
+                      borderColor: '#fac83e',
                       backgroundColor: alpha('#ffffff', 0.1)
                     },
                     py: 1.5,
@@ -177,6 +181,7 @@ const LandingPage: React.FC = () => {
                     width: 200,
                     height: 200,
                     backgroundColor: alpha('#ffffff', 0.1),
+               
                     borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
@@ -184,7 +189,7 @@ const LandingPage: React.FC = () => {
                     border: '2px solid rgba(255,255,255,0.3)'
                   }}
                 >
-                  <AccountBalance sx={{ fontSize: 80, color: 'white' }} />
+                  <AccountBalance sx={{ fontSize: 80, color: '#fac83e' }} />
                 </Box>
               </Box>
             </Box>
