@@ -27,10 +27,12 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import LogoutButton from '../components/auth/LogoutButton';
+import AccountManagement from '../components/admin/AccountManagement';
 import api from '../services/api';
 
 const AdminPanel: React.FC = () => {
   const { user } = useAuth();
+  const [activeView, setActiveView] = useState('overview');
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalBusinesses: 0,
@@ -109,6 +111,39 @@ const AdminPanel: React.FC = () => {
       action: 'settings'
     }
   ];
+
+  const handleActionClick = (action: string) => {
+    setActiveView(action);
+  };
+
+  // Show Account Management if users view is active
+  if (activeView === 'users') {
+    return (
+      <Box p={3}>
+        <Box mb={4} display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h4" gutterBottom display="flex" alignItems="center">
+            <People sx={{ mr: 2, fontSize: '2rem' }} />
+            Account Management
+          </Typography>
+          <Box display="flex" gap={2}>
+            <Button 
+              variant="outlined" 
+              onClick={() => setActiveView('overview')}
+            >
+              Back to Overview
+            </Button>
+            <LogoutButton 
+              variant="iconButton" 
+              redirectTo="/"
+              size="large"
+              color="primary"
+            />
+          </Box>
+        </Box>
+        <AccountManagement />
+      </Box>
+    );
+  }
 
   const systemHealth = [
     { status: 'Operational', component: 'Database Connection', icon: <CheckCircle color="success" /> },
@@ -224,6 +259,7 @@ const AdminPanel: React.FC = () => {
                   '&:hover': { elevation: 4 },
                   height: '100%'
                 }}
+                onClick={() => handleActionClick(action.action)}
               >
                 <CardContent>
                   <Box display="flex" alignItems="center" mb={1}>
