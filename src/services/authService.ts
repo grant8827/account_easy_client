@@ -50,9 +50,8 @@ export const authService = {
         // Clear any existing tokens first
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
-        // Set new tokens with proper Bearer prefix if not already present
-        const authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-        localStorage.setItem('token', authToken);
+        // Store the token without Bearer prefix - let the api service add it
+        localStorage.setItem('token', token);
         localStorage.setItem('refreshToken', refreshToken);
         localStorage.setItem('user', JSON.stringify(user));
         console.log('authService: Login successful, tokens stored');
@@ -73,9 +72,8 @@ export const authService = {
     
     if (response.data.success) {
       const { token, refreshToken, user } = response.data.data;
-      // Set token with proper Bearer prefix if not already present
-      const authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-      localStorage.setItem('token', authToken);
+      // Store token without Bearer prefix - let the api service add it
+      localStorage.setItem('token', token);
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('user', JSON.stringify(user));
     }

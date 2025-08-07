@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -17,6 +17,8 @@ import {
   Chip,
   Tab,
   Tabs,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   AccountCircle,
@@ -25,10 +27,12 @@ import {
   AttachMoney,
   Assessment,
   Receipt,
+  Home,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import LogoutButton from '../components/auth/LogoutButton';
 import SubscriptionManager from '../components/subscription/SubscriptionManager';
+import api from '../services/api';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -68,6 +72,46 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [tabValue, setTabValue] = useState(0);
+  const [stats, setStats] = useState({
+    totalBusinesses: 0,
+    totalEmployees: 0,
+    monthlyPayroll: 0,
+    pendingTransactions: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch dashboard statistics
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/dashboard/stats');
+
+        if (response.data.success) {
+          setStats(response.data.data);
+        } else {
+          throw new Error(response.data.message || 'Failed to load statistics');
+        }
+      } catch (error: any) {
+        console.error('Error fetching dashboard stats:', error);
+        setError(error.response?.data?.message || error.message || 'Failed to load dashboard data');
+        // Keep default stats if API fails
+        setStats({
+          totalBusinesses: 0,
+          totalEmployees: 0,
+          monthlyPayroll: 0,
+          pendingTransactions: 0
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchStats();
+    }
+  }, [user]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -81,13 +125,7 @@ const Dashboard: React.FC = () => {
     setTabValue(newValue);
   };
 
-  // Sample data for demonstration
-  const stats = {
-    totalBusinesses: 5,
-    totalEmployees: 23,
-    monthlyPayroll: 750000,
-    pendingTransactions: 12
-  };
+  // Sample data for demonstration - replaced with real data above
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-JM', {
@@ -135,6 +173,10 @@ const Dashboard: React.FC = () => {
           horizontal: 'right',
         }}
       >
+        <MenuItem onClick={() => navigate('/landingpage')}>
+          <Home sx={{ mr: 1 }} />
+          Home
+        </MenuItem>
         <MenuItem onClick={handleMenuClose}>
           <AccountCircle sx={{ mr: 1 }} />
           Profile
@@ -167,6 +209,13 @@ const Dashboard: React.FC = () => {
 
         {/* Tab Panels */}
         <TabPanel value={tabValue} index={0}>
+          {/* Error Alert */}
+          {error && (
+            <Alert severity="warning" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
+          
           {/* Stats Cards using CSS Grid */}
         <Box sx={{ 
           display: 'grid', 
@@ -186,7 +235,7 @@ const Dashboard: React.FC = () => {
                     Total Businesses
                   </Typography>
                   <Typography variant="h4">
-                    {stats.totalBusinesses}
+                    {loading ? <CircularProgress size={24} /> : stats.totalBusinesses}
                   </Typography>
                 </Box>
                 <Business sx={{ fontSize: 40, color: '#1976d2' }} />
@@ -202,7 +251,7 @@ const Dashboard: React.FC = () => {
                     Total Employees
                   </Typography>
                   <Typography variant="h4">
-                    {stats.totalEmployees}
+                    {loading ? <CircularProgress size={24} /> : stats.totalEmployees}
                   </Typography>
                 </Box>
                 <People sx={{ fontSize: 40, color: '#388e3c' }} />
@@ -218,7 +267,7 @@ const Dashboard: React.FC = () => {
                     Monthly Payroll
                   </Typography>
                   <Typography variant="h5">
-                    {formatCurrency(stats.monthlyPayroll)}
+                    {loading ? <CircularProgress size={20} /> : formatCurrency(stats.monthlyPayroll)}
                   </Typography>
                 </Box>
                 <AttachMoney sx={{ fontSize: 40, color: '#f57c00' }} />
@@ -234,7 +283,7 @@ const Dashboard: React.FC = () => {
                     Pending Items
                   </Typography>
                   <Typography variant="h4">
-                    {stats.pendingTransactions}
+                    {loading ? <CircularProgress size={24} /> : stats.pendingTransactions}
                   </Typography>
                 </Box>
                 <Assessment sx={{ fontSize: 40, color: '#7b1fa2' }} />

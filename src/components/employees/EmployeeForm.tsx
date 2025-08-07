@@ -23,6 +23,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 interface EmployeeFormProps {
   open: boolean;
@@ -59,6 +60,7 @@ const jamaicaParishes = [
 ];
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({ open, onClose, onSubmit, employee }) => {
+  const { user } = useAuth();
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -132,10 +134,58 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ open, onClose, onSubmit, em
       setLoading(true);
       setError(null);
 
+      // Validate required fields
+      if (!user?.selectedBusiness) {
+        setError('No business selected. Please select a business first.');
+        return;
+      }
+
+      if (!formData.firstName || !formData.lastName || !formData.email) {
+        setError('First name, last name, and email are required.');
+        return;
+      }
+
+      // Transform flat formData to structured format expected by backend
+      const employeeData = {
+        business: user.selectedBusiness, // Current selected business
+        userData: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone
+        },
+        personalInfo: {
+          dateOfBirth: formData.hireDate || new Date(), // Using hireDate as a placeholder for now
+          address: formData.address,
+          parish: formData.parish,
+          emergencyContact: formData.emergencyContact,
+          emergencyPhone: formData.emergencyPhone
+        },
+        employment: {
+          position: formData.position,
+          department: formData.department,
+          startDate: formData.hireDate || new Date(),
+          status: formData.status,
+          role: 'employee'
+        },
+        compensation: {
+          basicSalary: formData.basicSalary,
+          allowances: formData.allowances,
+          currency: 'JMD'
+        },
+        taxInfo: {
+          trn: formData.trn,
+          nis: formData.nis
+        },
+        bankDetails: {
+          accountNumber: formData.bankAccount
+        }
+      };
+
       const endpoint = employee ? `/employees/${employee._id}` : '/employees';
       const method = employee ? 'put' : 'post';
 
-      await api[method](endpoint, formData);
+      await api[method](endpoint, employeeData);
       
       onSubmit();
       onClose();
