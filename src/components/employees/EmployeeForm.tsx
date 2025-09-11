@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -13,17 +13,16 @@ import {
   Box,
   Typography,
   Alert,
-  Stepper,
-  Step,
-  StepLabel,
-  Stack,
-  InputAdornment
+  CircularProgress
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+
+interface Business {
+  _id: string;
+  name: string;
+  registrationNumber: string;
+}
 
 interface EmployeeFormProps {
   open: boolean;
@@ -32,101 +31,51 @@ interface EmployeeFormProps {
   employee?: any;
 }
 
-interface EmployeeData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  address: string;
-  parish: string;
-  employeeId: string;
-  position: string;
-  department: string;
-  hireDate: Date | null;
-  basicSalary: number;
-  allowances: number;
-  trn: string;
-  nis: string;
-  bankAccount: string;
-  emergencyContact: string;
-  emergencyPhone: string;
-  status: 'active' | 'inactive';
-}
-
-const jamaicaParishes = [
-  'Kingston', 'St. Andrew', 'St. Thomas', 'Portland', 'St. Mary',
-  'St. Ann', 'Trelawny', 'St. James', 'Hanover', 'Westmoreland',
-  'St. Elizabeth', 'Manchester', 'Clarendon', 'St. Catherine'
-];
-
 const EmployeeForm: React.FC<EmployeeFormProps> = ({ open, onClose, onSubmit, employee }) => {
   const { user } = useAuth();
-  const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [loadingBusinesses, setLoadingBusinesses] = useState(false);
   
-  const [formData, setFormData] = useState<EmployeeData>({
+  const [formData, setFormData] = useState({
+    businessId: employee?.business?._id || user?.selectedBusiness || '',
+    employeeId: employee?.employeeId || '',
     firstName: employee?.firstName || '',
     lastName: employee?.lastName || '',
     email: employee?.email || '',
     phone: employee?.phone || '',
-    address: employee?.address || '',
-    parish: employee?.parish || '',
-    employeeId: employee?.employeeId || '',
     position: employee?.position || '',
     department: employee?.department || '',
-    hireDate: employee?.hireDate ? new Date(employee.hireDate) : null,
     basicSalary: employee?.basicSalary || 0,
-    allowances: employee?.allowances || 0,
     trn: employee?.trn || '',
     nis: employee?.nis || '',
-    bankAccount: employee?.bankAccount || '',
-    emergencyContact: employee?.emergencyContact || '',
-    emergencyPhone: employee?.emergencyPhone || '',
-    status: employee?.status || 'active'
+    dateOfBirth: employee?.dateOfBirth || '1990-01-01'
   });
 
-  const steps = ['Personal Info', 'Employment Details', 'Financial Info'];
+  useEffect(() => {
+    if (open) {
+      fetchBusinesses();
+    }
+  }, [open]);
 
-  const handleInputChange = (field: keyof EmployeeData, value: any) => {
+  const fetchBusinesses = async () => {
+    try {
+      setLoadingBusinesses(true);
+      const response = await api.get('/businesses');
+      setBusinesses(response.data.businesses || []);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to fetch businesses');
+    } finally {
+      setLoadingBusinesses(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-JM', {
-      style: 'currency',
-      currency: 'JMD'
-    }).format(amount);
-  };
-
-  const validateStep = (step: number) => {
-    switch (step) {
-      case 0:
-        return formData.firstName && formData.lastName && formData.email && formData.phone;
-      case 1:
-        return formData.employeeId && formData.position && formData.hireDate;
-      case 2:
-        return formData.basicSalary > 0;
-      default:
-        return true;
-    }
-  };
-
-  const handleNext = () => {
-    if (validateStep(activeStep)) {
-      setActiveStep(prev => prev + 1);
-      setError(null);
-    } else {
-      setError('Please fill in all required fields');
-    }
-  };
-
-  const handleBack = () => {
-    setActiveStep(prev => prev - 1);
-    setError(null);
   };
 
   const handleSubmit = async () => {
@@ -134,51 +83,59 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ open, onClose, onSubmit, em
       setLoading(true);
       setError(null);
 
-      // Validate required fields
-      if (!user?.selectedBusiness) {
-        setError('No business selected. Please select a business first.');
+      if (!formData.businessId) {
+        setError('Please select a business');
+        return;
+      }
+      if (!formData.firstName || !formData.lastName || !formData.email || !formData.position || !formData.trn || !formData.nis) {
+        setError('Please fill in all required fields:\n• First Name\n• Last Name\n• Email\n• Position\n• TRN (9 digits)\n• NIS (9 digits)\n• Date of Birth');
         return;
       }
 
-      if (!formData.firstName || !formData.lastName || !formData.email) {
-        setError('First name, last name, and email are required.');
+      // Validate TRN and NIS format
+      const cleanTrn = formData.trn.replace(/\D/g, ''); // Remove non-digits
+      const cleanNis = formData.nis.replace(/\D/g, ''); // Remove non-digits
+      
+      if (cleanTrn.length !== 9) {
+        setError('TRN must be exactly 9 digits');
+        return;
+      }
+      if (cleanNis.length !== 9) {
+        setError('NIS must be exactly 9 digits');
         return;
       }
 
-      // Transform flat formData to structured format expected by backend
+      // Create the employee data with user information
       const employeeData = {
-        business: user.selectedBusiness, // Current selected business
         userData: {
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
-          phone: formData.phone
+          phone: formData.phone,
+          role: 'employee',
+          password: 'TempPass123!' // Temporary password - should be changed on first login
         },
+        business: formData.businessId,
+        employeeId: formData.employeeId.trim() || undefined, // Include if provided, otherwise let it auto-generate
         personalInfo: {
-          dateOfBirth: formData.hireDate || new Date(), // Using hireDate as a placeholder for now
-          address: formData.address,
-          parish: formData.parish,
-          emergencyContact: formData.emergencyContact,
-          emergencyPhone: formData.emergencyPhone
+          dateOfBirth: new Date(formData.dateOfBirth),
         },
         employment: {
           position: formData.position,
-          department: formData.department,
-          startDate: formData.hireDate || new Date(),
-          status: formData.status,
-          role: 'employee'
+          department: formData.department || 'General',
+          startDate: new Date(),
+          employmentType: 'full_time'
         },
         compensation: {
-          basicSalary: formData.basicSalary,
-          allowances: formData.allowances,
-          currency: 'JMD'
+          baseSalary: {
+            amount: Math.max(0, formData.basicSalary || 0), // Ensure non-negative value
+            currency: 'JMD',
+            frequency: 'monthly'
+          }
         },
         taxInfo: {
-          trn: formData.trn,
-          nis: formData.nis
-        },
-        bankDetails: {
-          accountNumber: formData.bankAccount
+          trn: cleanTrn,
+          nis: cleanNis
         }
       };
 
@@ -190,213 +147,26 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ open, onClose, onSubmit, em
       onSubmit();
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save employee');
+      console.error('Employee creation error:', err);
+      console.error('Error response data:', err.response?.data);
+      
+      const errorData = err.response?.data;
+      if (errorData?.errors && Array.isArray(errorData.errors)) {
+        // Handle detailed validation errors
+        const errorMessages = errorData.errors.map((error: any) => 
+          `${error.field}: ${error.message}`
+        ).join('\n');
+        setError(`Validation errors:\n${errorMessages}`);
+      } else if (errorData?.details && Array.isArray(errorData.details)) {
+        // Handle detailed error descriptions
+        setError(`Validation errors:\n${errorData.details.join('\n')}`);
+      } else if (errorData?.message) {
+        setError(errorData.message);
+      } else {
+        setError('Failed to save employee. Please check all required fields.');
+      }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const renderStepContent = (step: number) => {
-    switch (step) {
-      case 0:
-        return (
-          <Stack spacing={3}>
-            <Typography variant="h6" gutterBottom>
-              Personal Information
-            </Typography>
-            
-            <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
-              <TextField
-                label="First Name *"
-                value={formData.firstName}
-                onChange={(e) => handleInputChange('firstName', e.target.value)}
-                fullWidth
-              />
-              <TextField
-                label="Last Name *"
-                value={formData.lastName}
-                onChange={(e) => handleInputChange('lastName', e.target.value)}
-                fullWidth
-              />
-            </Box>
-
-            <TextField
-              label="Email Address *"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              fullWidth
-            />
-
-            <TextField
-              label="Phone Number *"
-              value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              fullWidth
-            />
-
-            <TextField
-              label="Address"
-              value={formData.address}
-              onChange={(e) => handleInputChange('address', e.target.value)}
-              multiline
-              rows={3}
-              fullWidth
-            />
-
-            <FormControl fullWidth>
-              <InputLabel>Parish</InputLabel>
-              <Select
-                value={formData.parish}
-                label="Parish"
-                onChange={(e) => handleInputChange('parish', e.target.value)}
-              >
-                {jamaicaParishes.map(parish => (
-                  <MenuItem key={parish} value={parish}>{parish}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
-              <TextField
-                label="Emergency Contact"
-                value={formData.emergencyContact}
-                onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
-                fullWidth
-              />
-              <TextField
-                label="Emergency Phone"
-                value={formData.emergencyPhone}
-                onChange={(e) => handleInputChange('emergencyPhone', e.target.value)}
-                fullWidth
-              />
-            </Box>
-          </Stack>
-        );
-
-      case 1:
-        return (
-          <Stack spacing={3}>
-            <Typography variant="h6" gutterBottom>
-              Employment Details
-            </Typography>
-
-            <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
-              <TextField
-                label="Employee ID *"
-                value={formData.employeeId}
-                onChange={(e) => handleInputChange('employeeId', e.target.value)}
-                fullWidth
-              />
-              <TextField
-                label="Position *"
-                value={formData.position}
-                onChange={(e) => handleInputChange('position', e.target.value)}
-                fullWidth
-              />
-            </Box>
-
-            <TextField
-              label="Department"
-              value={formData.department}
-              onChange={(e) => handleInputChange('department', e.target.value)}
-              fullWidth
-            />
-
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DatePicker
-                label="Hire Date *"
-                value={formData.hireDate}
-                onChange={(date) => handleInputChange('hireDate', date)}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    required: true
-                  }
-                }}
-              />
-            </LocalizationProvider>
-
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={formData.status}
-                label="Status"
-                onChange={(e) => handleInputChange('status', e.target.value)}
-              >
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
-              </Select>
-            </FormControl>
-          </Stack>
-        );
-
-      case 2:
-        return (
-          <Stack spacing={3}>
-            <Typography variant="h6" gutterBottom>
-              Financial Information
-            </Typography>
-
-            <TextField
-              label="Basic Salary *"
-              type="number"
-              value={formData.basicSalary}
-              onChange={(e) => handleInputChange('basicSalary', parseFloat(e.target.value) || 0)}
-              InputProps={{
-                startAdornment: <InputAdornment position="start">JMD</InputAdornment>,
-              }}
-              fullWidth
-              helperText={`Monthly: ${formatCurrency(formData.basicSalary)}`}
-            />
-
-            <TextField
-              label="Monthly Allowances"
-              type="number"
-              value={formData.allowances}
-              onChange={(e) => handleInputChange('allowances', parseFloat(e.target.value) || 0)}
-              InputProps={{
-                startAdornment: <InputAdornment position="start">JMD</InputAdornment>,
-              }}
-              fullWidth
-              helperText={`Allowances: ${formatCurrency(formData.allowances)}`}
-            />
-
-            <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
-              <TextField
-                label="TRN (Tax Registration Number)"
-                value={formData.trn}
-                onChange={(e) => handleInputChange('trn', e.target.value)}
-                fullWidth
-                helperText="Format: 000-000-000"
-              />
-              <TextField
-                label="NIS Number"
-                value={formData.nis}
-                onChange={(e) => handleInputChange('nis', e.target.value)}
-                fullWidth
-                helperText="National Insurance Scheme"
-              />
-            </Box>
-
-            <TextField
-              label="Bank Account Number"
-              value={formData.bankAccount}
-              onChange={(e) => handleInputChange('bankAccount', e.target.value)}
-              fullWidth
-              helperText="For salary payments"
-            />
-
-            <Alert severity="info">
-              <Typography variant="body2">
-                <strong>Total Monthly Compensation:</strong> {formatCurrency(formData.basicSalary + formData.allowances)}
-              </Typography>
-            </Alert>
-          </Stack>
-        );
-
-      default:
-        return null;
     }
   };
 
@@ -413,16 +183,133 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ open, onClose, onSubmit, em
           </Alert>
         )}
 
-        <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
+        <Box sx={{ display: 'grid', gap: 3, mt: 2 }}>
+          <FormControl fullWidth required>
+            <InputLabel>Select Business *</InputLabel>
+            <Select
+              value={formData.businessId}
+              label="Select Business *"
+              onChange={(e) => handleInputChange('businessId', e.target.value)}
+              disabled={loadingBusinesses}
+            >
+              {loadingBusinesses ? (
+                <MenuItem disabled>
+                  <CircularProgress size={20} sx={{ mr: 1 }} />
+                  Loading businesses...
+                </MenuItem>
+              ) : (
+                businesses.map((business) => (
+                  <MenuItem key={business._id} value={business._id}>
+                    {business.name} ({business.registrationNumber})
+                  </MenuItem>
+                ))
+              )}
+            </Select>
+            {businesses.length === 0 && !loadingBusinesses && (
+              <Typography variant="caption" color="error" sx={{ mt: 1 }}>
+                No businesses found. Please create a business first.
+              </Typography>
+            )}
+          </FormControl>
 
-        <Box sx={{ minHeight: 400 }}>
-          {renderStepContent(activeStep)}
+          <TextField
+            label="Employee ID"
+            value={formData.employeeId}
+            onChange={(e) => handleInputChange('employeeId', e.target.value)}
+            fullWidth
+            helperText="Optional - Leave blank to auto-generate (e.g., EMP-2025-0001)"
+            placeholder="EMP-2025-0001"
+          />
+
+          <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+            <TextField
+              label="First Name *"
+              value={formData.firstName}
+              onChange={(e) => handleInputChange('firstName', e.target.value)}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Last Name *"
+              value={formData.lastName}
+              onChange={(e) => handleInputChange('lastName', e.target.value)}
+              fullWidth
+              required
+            />
+          </Box>
+
+          <TextField
+            label="Email Address *"
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleInputChange('email', e.target.value)}
+            fullWidth
+            required
+          />
+
+          <TextField
+            label="Phone Number"
+            value={formData.phone}
+            onChange={(e) => handleInputChange('phone', e.target.value)}
+            fullWidth
+          />
+
+          <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+            <TextField
+              label="Position *"
+              value={formData.position}
+              onChange={(e) => handleInputChange('position', e.target.value)}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Department"
+              value={formData.department}
+              onChange={(e) => handleInputChange('department', e.target.value)}
+              fullWidth
+            />
+          </Box>
+
+          <TextField
+            label="Basic Salary (JMD)"
+            type="number"
+            value={formData.basicSalary}
+            onChange={(e) => handleInputChange('basicSalary', parseFloat(e.target.value) || 0)}
+            fullWidth
+          />
+
+          <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
+            <TextField
+              label="TRN (Tax Registration Number) *"
+              value={formData.trn}
+              onChange={(e) => handleInputChange('trn', e.target.value)}
+              fullWidth
+              required
+              inputProps={{ maxLength: 9 }}
+              helperText="9 digits required"
+            />
+            <TextField
+              label="NIS Number *"
+              value={formData.nis}
+              onChange={(e) => handleInputChange('nis', e.target.value)}
+              fullWidth
+              required
+              inputProps={{ maxLength: 9 }}
+              helperText="9 digits required"
+            />
+          </Box>
+
+          <TextField
+            label="Date of Birth *"
+            type="date"
+            value={formData.dateOfBirth}
+            onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+            fullWidth
+            required
+            InputLabelProps={{
+              shrink: true,
+            }}
+          />
         </Box>
       </DialogContent>
 
@@ -430,30 +317,13 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ open, onClose, onSubmit, em
         <Button onClick={onClose} disabled={loading}>
           Cancel
         </Button>
-        
-        {activeStep > 0 && (
-          <Button onClick={handleBack} disabled={loading}>
-            Back
-          </Button>
-        )}
-
-        {activeStep < steps.length - 1 ? (
-          <Button 
-            onClick={handleNext} 
-            variant="contained"
-            disabled={!validateStep(activeStep)}
-          >
-            Next
-          </Button>
-        ) : (
-          <Button 
-            onClick={handleSubmit} 
-            variant="contained"
-            disabled={loading || !validateStep(activeStep)}
-          >
-            {loading ? 'Saving...' : employee ? 'Update Employee' : 'Add Employee'}
-          </Button>
-        )}
+        <Button 
+          onClick={handleSubmit} 
+          variant="contained"
+          disabled={loading}
+        >
+          {loading ? 'Saving...' : employee ? 'Update Employee' : 'Add Employee'}
+        </Button>
       </DialogActions>
     </Dialog>
   );

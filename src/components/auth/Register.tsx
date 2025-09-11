@@ -69,7 +69,7 @@ const Register: React.FC = () => {
               Create Account
             </Typography>
             <Typography variant="h6" color="textSecondary">
-              Join Account Easy - Jamaica Financial System
+              Join AccountEezy - Jamaica Financial System
             </Typography>
           </Box>
 

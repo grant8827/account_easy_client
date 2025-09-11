@@ -46,6 +46,7 @@ import {
   DateRange
 } from '@mui/icons-material';
 import api from '../../services/api';
+import TransactionForm from './TransactionForm';
 
 interface Transaction {
   _id: string;
@@ -144,6 +145,8 @@ const TransactionList: React.FC = () => {
   const [dateFilter, setDateFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [transactionFormOpen, setTransactionFormOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   useEffect(() => {
     fetchTransactions();
@@ -227,6 +230,26 @@ const TransactionList: React.FC = () => {
     } finally {
       setDeleting(false);
     }
+  };
+
+  const handleAddTransaction = () => {
+    setEditingTransaction(null);
+    setTransactionFormOpen(true);
+  };
+
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setTransactionFormOpen(true);
+    handleMenuClose();
+  };
+
+  const handleTransactionFormClose = () => {
+    setTransactionFormOpen(false);
+    setEditingTransaction(null);
+  };
+
+  const handleTransactionSubmit = () => {
+    fetchTransactions(); // Refresh the transaction list
   };
 
   const getTypeColor = (type: string) => {
@@ -502,7 +525,7 @@ const TransactionList: React.FC = () => {
                 {searchTerm ? 'Try adjusting your search criteria.' : 'Start by adding your first transaction.'}
               </Typography>
               {!searchTerm && (
-                <Button variant="contained" startIcon={<Add />}>
+                <Button variant="contained" startIcon={<Add />} onClick={handleAddTransaction}>
                   Add Transaction
                 </Button>
               )}
@@ -598,6 +621,7 @@ const TransactionList: React.FC = () => {
       <Fab
         color="primary"
         aria-label="add transaction"
+        onClick={handleAddTransaction}
         sx={{
           position: 'fixed',
           bottom: 24,
@@ -613,7 +637,7 @@ const TransactionList: React.FC = () => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handleMenuClose}>
+        <MenuItem onClick={() => selectedTransaction && handleEditTransaction(selectedTransaction)}>
           <Edit sx={{ mr: 1 }} />
           Edit Transaction
         </MenuItem>
@@ -654,6 +678,14 @@ const TransactionList: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Transaction Form Dialog */}
+      <TransactionForm
+        open={transactionFormOpen}
+        onClose={handleTransactionFormClose}
+        onSubmit={handleTransactionSubmit}
+        transaction={editingTransaction}
+      />
     </Box>
   );
 };

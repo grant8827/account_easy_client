@@ -72,7 +72,7 @@ export const authService = {
     
     if (response.data.success) {
       const { token, refreshToken, user } = response.data.data;
-      // Store token without Bearer prefix - let the api service add it
+      // Store the token without Bearer prefix - let the api service add it
       localStorage.setItem('token', token);
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('user', JSON.stringify(user));

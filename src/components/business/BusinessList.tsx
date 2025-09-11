@@ -42,17 +42,17 @@ interface Business {
   nis?: string;
   businessType: string;
   industry: string;
-  status: 'active' | 'inactive' | 'suspended';
+  isActive?: boolean; // Backend uses isActive instead of status
   subscriptionStatus?: string;
   subscriptionPlan?: string;
-  address: {
+  address?: {
     street: string;
     city: string;
     parish: string;
     postalCode: string;
     country: string;
   };
-  contactInfo: {
+  contactInfo?: {
     phone: string;
     email: string;
     website?: string;
@@ -147,13 +147,21 @@ const BusinessList: React.FC = () => {
     handleBusinessFormClose();
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status?: string) => {
     switch (status) {
       case 'active': return 'success';
       case 'inactive': return 'default';
       case 'suspended': return 'error';
       default: return 'default';
     }
+  };
+
+  const getBusinessStatus = (business: Business): string => {
+    // Convert isActive boolean to status string
+    if (business.isActive === false) {
+      return 'inactive';
+    }
+    return 'active'; // Default to active if isActive is true or undefined
   };
 
   if (loading) {
@@ -201,7 +209,7 @@ const BusinessList: React.FC = () => {
               No Businesses Found
             </Typography>
             <Typography variant="body2" color="text.secondary" mb={3}>
-              Start by registering your first business to get started with AccountEasy.
+              Start by registering your first business to get started with AccountEezy.
             </Typography>
             <Button variant="contained" startIcon={<Add />} onClick={handleAddBusiness}>
               Register Business
@@ -244,9 +252,9 @@ const BusinessList: React.FC = () => {
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
                           <Chip 
-                            label={business.status} 
+                            label={getBusinessStatus(business)} 
                             size="small" 
-                            color={getStatusColor(business.status)}
+                            color={getStatusColor(getBusinessStatus(business))}
                           />
                           {business.subscriptionStatus && (
                             <Tooltip title={`Subscription: ${business.subscriptionPlan || 'None'}`}>
@@ -289,19 +297,19 @@ const BusinessList: React.FC = () => {
                     <Box display="flex" alignItems="center" mb={1}>
                       <LocationOn fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary" noWrap>
-                        {business.address?.city || 'N/A'}, {business.address?.parish || 'N/A'}
+                        {business.address?.city ? `${business.address.city}${business.address.parish ? `, ${business.address.parish}` : ''}` : 'Address not provided'}
                       </Typography>
                     </Box>
                     <Box display="flex" alignItems="center" mb={1}>
                       <Phone fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary">
-                        {business.contactInfo?.phone || 'N/A'}
+                        {business.contactInfo?.phone || 'Phone not provided'}
                       </Typography>
                     </Box>
                     <Box display="flex" alignItems="center">
                       <Email fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary" noWrap>
-                        {business.contactInfo?.email || 'N/A'}
+                        {business.contactInfo?.email || 'Email not provided'}
                       </Typography>
                     </Box>
                   </Box>

@@ -6,6 +6,27 @@
   height: 40vmin;
   pointer-events: none;
 }
+.navbar {
+  width: 100%;
+  background-color: rgb(255, 179, 0);
+  justify-content: 'space-around';
+}
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+
+
+
+
+
+
+
+
+
 
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {

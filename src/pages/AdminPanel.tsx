@@ -14,6 +14,16 @@ import {
   Divider,
   Alert,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
 } from '@mui/material';
 import {
   SupervisorAccount,
@@ -24,15 +34,16 @@ import {
   Settings,
   Warning,
   CheckCircle,
+  Edit,
+  Delete,
+  Close,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import LogoutButton from '../components/auth/LogoutButton';
-import AccountManagement from '../components/admin/AccountManagement';
 import api from '../services/api';
 
 const AdminPanel: React.FC = () => {
   const { user } = useAuth();
-  const [activeView, setActiveView] = useState('overview');
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalBusinesses: 0,
@@ -41,6 +52,12 @@ const AdminPanel: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userManagementOpen, setUserManagementOpen] = useState(false);
+  const [businessManagementOpen, setBusinessManagementOpen] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [loadingBusinesses, setLoadingBusinesses] = useState(false);
 
   useEffect(() => {
     if (user?.role !== 'super_admin') {
@@ -54,12 +71,69 @@ const AdminPanel: React.FC = () => {
 
   const fetchAdminStats = async () => {
     try {
+      console.log('Fetching admin stats...');
       const response = await api.get('/admin/stats');
-      setStats(response.data.data);
+      console.log('Admin stats response:', response.data);
+      setStats(response.data);
     } catch (err: any) {
-      setError('Failed to load admin statistics');
+      console.error('Error fetching admin stats:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load admin statistics';
+      setError(`Stats Error: ${errorMessage}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      setError(''); // Clear previous errors
+      console.log('Fetching users...');
+      const response = await api.get('/admin/users');
+      console.log('Users response:', response.data);
+      setUsers(response.data.users || []);
+    } catch (err: any) {
+      console.error('Error fetching users:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load users';
+      setError(`Users Error: ${errorMessage}`);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const fetchBusinesses = async () => {
+    try {
+      setLoadingBusinesses(true);
+      const response = await api.get('/admin/businesses');
+      setBusinesses(response.data.businesses || []);
+    } catch (err: any) {
+      setError('Failed to load businesses');
+    } finally {
+      setLoadingBusinesses(false);
+    }
+  };
+
+  const handleManageAction = (action: string) => {
+    switch (action) {
+      case 'users':
+        setUserManagementOpen(true);
+        fetchUsers();
+        break;
+      case 'businesses':
+        setBusinessManagementOpen(true);
+        fetchBusinesses();
+        break;
+      case 'reports':
+        // TODO: Implement reports
+        break;
+      case 'security':
+        // TODO: Implement security settings
+        break;
+      case 'settings':
+        // TODO: Implement system settings
+        break;
+      default:
+        break;
     }
   };
 
@@ -111,39 +185,6 @@ const AdminPanel: React.FC = () => {
       action: 'settings'
     }
   ];
-
-  const handleActionClick = (action: string) => {
-    setActiveView(action);
-  };
-
-  // Show Account Management if users view is active
-  if (activeView === 'users') {
-    return (
-      <Box p={3}>
-        <Box mb={4} display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h4" gutterBottom display="flex" alignItems="center">
-            <People sx={{ mr: 2, fontSize: '2rem' }} />
-            Account Management
-          </Typography>
-          <Box display="flex" gap={2}>
-            <Button 
-              variant="outlined" 
-              onClick={() => setActiveView('overview')}
-            >
-              Back to Overview
-            </Button>
-            <LogoutButton 
-              variant="iconButton" 
-              redirectTo="/"
-              size="large"
-              color="primary"
-            />
-          </Box>
-        </Box>
-        <AccountManagement />
-      </Box>
-    );
-  }
 
   const systemHealth = [
     { status: 'Operational', component: 'Database Connection', icon: <CheckCircle color="success" /> },
@@ -259,7 +300,6 @@ const AdminPanel: React.FC = () => {
                   '&:hover': { elevation: 4 },
                   height: '100%'
                 }}
-                onClick={() => handleActionClick(action.action)}
               >
                 <CardContent>
                   <Box display="flex" alignItems="center" mb={1}>
@@ -271,7 +311,7 @@ const AdminPanel: React.FC = () => {
                   <Typography variant="body2" color="text.secondary" mb={2}>
                     {action.description}
                   </Typography>
-                  <Button variant="outlined" size="small">
+                  <Button variant="outlined" size="small" onClick={() => handleManageAction(action.action)}>
                     Manage
                   </Button>
                 </CardContent>
@@ -353,6 +393,153 @@ const AdminPanel: React.FC = () => {
           </div>
         </Paper>
       </Box>
+
+      {/* User Management Dialog */}
+      <Dialog
+        open={userManagementOpen}
+        onClose={() => setUserManagementOpen(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">User Management</Typography>
+            <IconButton onClick={() => setUserManagementOpen(false)}>
+              <Close />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {loadingUsers ? (
+            <Box display="flex" justifyContent="center" p={3}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Role</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Created</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user._id}>
+                      <TableCell>{user.firstName} {user.lastName}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={user.role.replace('_', ' ')}
+                          size="small"
+                          color={user.role === 'super_admin' ? 'error' : 'primary'}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={user.isActive ? 'Active' : 'Inactive'}
+                          size="small"
+                          color={user.isActive ? 'success' : 'default'}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {new Date(user.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton size="small">
+                          <Edit />
+                        </IconButton>
+                        {user.role !== 'super_admin' && (
+                          <IconButton size="small" color="error">
+                            <Delete />
+                          </IconButton>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Business Management Dialog */}
+      <Dialog
+        open={businessManagementOpen}
+        onClose={() => setBusinessManagementOpen(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">Business Management</Typography>
+            <IconButton onClick={() => setBusinessManagementOpen(false)}>
+              <Close />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {loadingBusinesses ? (
+            <Box display="flex" justifyContent="center" p={3}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Business Name</TableCell>
+                    <TableCell>Owner</TableCell>
+                    <TableCell>TRN</TableCell>
+                    <TableCell>Industry</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Created</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {businesses.map((business) => (
+                    <TableRow key={business._id}>
+                      <TableCell>{business.name}</TableCell>
+                      <TableCell>
+                        {business.owner ? 
+                          `${business.owner.firstName} ${business.owner.lastName}` : 
+                          'N/A'
+                        }
+                      </TableCell>
+                      <TableCell>{business.trn}</TableCell>
+                      <TableCell>{business.industry}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={business.isActive ? 'Active' : 'Inactive'}
+                          size="small"
+                          color={business.isActive ? 'success' : 'default'}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {new Date(business.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton size="small">
+                          <Edit />
+                        </IconButton>
+                        <IconButton size="small" color="error">
+                          <Delete />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

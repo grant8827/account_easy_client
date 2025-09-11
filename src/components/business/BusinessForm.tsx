@@ -48,15 +48,15 @@ const industries = [
   'Wholesale Trade',
   'Transportation',
   'Information Technology',
-  'Finance & Insurance',
+  'Finance and Insurance',
   'Real Estate',
   'Professional Services',
-  'Healthcare',
   'Education',
-  'Entertainment',
+  'Healthcare',
   'Hospitality',
-  'Media',
-  'Other Services'
+  'Entertainment',
+  'Government',
+  'Other'
 ];
 
 const parishes = [
@@ -105,9 +105,9 @@ const BusinessForm: React.FC<BusinessFormProps> = ({
     country: business?.address?.country || 'Jamaica',
     
     // Contact Information
-    phone: business?.contactInfo?.phone || '',
-    email: business?.contactInfo?.email || '',
-    website: business?.contactInfo?.website || ''
+    phone: business?.contact?.phone || '',
+    email: business?.contact?.email || '',
+    website: business?.contact?.website || ''
   });
 
   const steps = ['Basic Information', 'Address Details', 'Contact Information'];
@@ -205,9 +205,9 @@ const BusinessForm: React.FC<BusinessFormProps> = ({
         taxSettings: {
           gctRegistered: false,
           payeRegistered: true,
-          nisRegistered: true,
-          fiscalYearEnd: '12-31'
+          nisRegistered: true
         },
+        fiscalYearEnd: new Date(new Date().getFullYear(), 2, 31), // March 31st
         settings: {
           currency: 'JMD',
           timeZone: 'America/Jamaica',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -98,7 +98,7 @@ interface Employee {
 }
 
 const EmployeeList: React.FC = () => {
-  const { user } = useAuth();
+  const { user, selectBusiness } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -110,6 +110,49 @@ const EmployeeList: React.FC = () => {
   const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
   const [employeeFormOpen, setEmployeeFormOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [businesses, setBusinesses] = useState<any[]>([]);
+
+  useEffect(() => {
+    console.log('EmployeeList mounted, calling fetchEmployees');
+    fetchBusinessesAndEmployees();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    console.log('User or selectedBusiness changed:', { user: user?.email, selectedBusiness: user?.selectedBusiness });
+    if (user?.selectedBusiness) {
+      console.log('User has selectedBusiness, fetching employees');
+      fetchEmployees();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.selectedBusiness, user]);
+
+  const fetchBusinessesAndEmployees = async () => {
+    try {
+      // First fetch businesses
+      const businessResponse = await api.get('/businesses');
+      const userBusinesses = businessResponse.data.businesses || [];
+      setBusinesses(userBusinesses);
+      
+      console.log('User businesses:', userBusinesses);
+      console.log('Current selectedBusiness:', user?.selectedBusiness);
+      
+      // If user has no selected business but has businesses, select the first one
+      if (!user?.selectedBusiness && userBusinesses.length > 0) {
+        console.log('Auto-selecting first business:', userBusinesses[0]._id);
+        selectBusiness(userBusinesses[0]._id);
+        return; // The useEffect will trigger fetchEmployees
+      }
+      
+      // If user already has a selected business, fetch employees
+      if (user?.selectedBusiness) {
+        await fetchEmployees();
+      }
+    } catch (err: any) {
+      console.error('Error fetching businesses:', err);
+      setError(err.response?.data?.message || 'Failed to fetch businesses');
+    }
+  };
 
   useEffect(() => {
     // Filter employees based on search term
@@ -124,31 +167,49 @@ const EmployeeList: React.FC = () => {
     setFilteredEmployees(filtered);
   }, [employees, searchTerm]);
 
-  const fetchEmployees = useCallback(async () => {
+  const fetchEmployees = async () => {
     try {
       setLoading(true);
       const businessId = user?.selectedBusiness;
       
+      console.log('Fetching employees for business:', businessId);
+      console.log('User data:', user);
+      
       if (!businessId) {
-        setError('No business selected');
+        console.log('No business selected. Available businesses:', businesses);
+        if (businesses.length === 0) {
+          setError('No businesses found. Please create a business first.');
+        } else {
+          setError(`No business selected. Available businesses: ${businesses.map(b => b.name).join(', ')}`);
+        }
         setEmployees([]);
         return;
       }
       
       const response = await api.get(`/employees/business/${businessId}`);
-      setEmployees(response.data.employees || []);
+      console.log('Employees response:', response.data);
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
+      const employeeData = response.data.employees || [];
+      console.log('Employee data type:', typeof employeeData);
+      console.log('Employee data is array:', Array.isArray(employeeData));
+      console.log('Employee data length:', employeeData.length);
+      
+      if (employeeData.length > 0) {
+        console.log('First employee sample:', employeeData[0]);
+      }
+      
+      setEmployees(employeeData);
       setError(null);
     } catch (err: any) {
+      console.error('Fetch employees error:', err);
       setError(err.response?.data?.message || 'Failed to fetch employees');
       setEmployees([]);
     } finally {
       setLoading(false);
     }
-  }, [user?.selectedBusiness]);
-
-  useEffect(() => {
-    fetchEmployees();
-  }, [fetchEmployees]);
+  };
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, employee: Employee) => {
     setAnchorEl(event.currentTarget);
@@ -259,6 +320,19 @@ const EmployeeList: React.FC = () => {
         </Alert>
       )}
 
+      {/* Debug Information */}
+      {process.env.NODE_ENV === 'development' && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          <Typography variant="body2">
+            <strong>Debug Info:</strong><br/>
+            Selected Business: {user?.selectedBusiness || 'None'}<br/>
+            Available Businesses: {businesses.length}<br/>
+            Employees Found: {employees.length}<br/>
+            Filtered Employees: {filteredEmployees.length}
+          </Typography>
+        </Alert>
+      )}
+
       {/* Search and Filters */}
       <Box mb={3}>
         <TextField
@@ -283,7 +357,12 @@ const EmployeeList: React.FC = () => {
       </Box>
 
       {/* Employee Table */}
-      {filteredEmployees.length === 0 ? (
+      {loading ? (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+          <CircularProgress />
+          <Typography sx={{ ml: 2 }}>Loading employees...</Typography>
+        </Box>
+      ) : filteredEmployees.length === 0 ? (
         <Card sx={{ textAlign: 'center', py: 8 }}>
           <CardContent>
             <PeopleIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
@@ -292,6 +371,13 @@ const EmployeeList: React.FC = () => {
             </Typography>
             <Typography variant="body2" color="text.secondary" mb={3}>
               {searchTerm ? 'Try adjusting your search criteria.' : 'Start by adding your first employee to get started.'}
+            </Typography>
+            {/* Additional debug info when no employees */}
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+              Total employees in state: {employees.length}<br/>
+              Search term: "{searchTerm}"<br/>
+              Business ID: {user?.selectedBusiness || 'Not selected'}<br/>
+              Loading: {loading ? 'Yes' : 'No'}
             </Typography>
             {!searchTerm && (
               <Button variant="contained" startIcon={<Add />} onClick={handleAddEmployee}>

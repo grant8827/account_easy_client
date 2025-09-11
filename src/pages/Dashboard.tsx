@@ -17,8 +17,9 @@ import {
   Chip,
   Tab,
   Tabs,
-  CircularProgress,
   Alert,
+  AlertTitle,
+  CircularProgress,
 } from '@mui/material';
 import {
   AccountCircle,
@@ -28,6 +29,7 @@ import {
   Assessment,
   Receipt,
   Home,
+  SupervisorAccount,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import LogoutButton from '../components/auth/LogoutButton';
@@ -72,44 +74,43 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [tabValue, setTabValue] = useState(0);
-  const [stats, setStats] = useState({
+  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [dashboardData, setDashboardData] = useState({
     totalBusinesses: 0,
     totalEmployees: 0,
     monthlyPayroll: 0,
-    pendingTransactions: 0
+    pendingTransactions: 0,
+    loading: true
   });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Fetch dashboard statistics
+  // Load user-specific data when component mounts
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchDashboardData = async () => {
       try {
-        setLoading(true);
-        const response = await api.get('/dashboard/stats');
-
-        if (response.data.success) {
-          setStats(response.data.data);
-        } else {
-          throw new Error(response.data.message || 'Failed to load statistics');
-        }
-      } catch (error: any) {
-        console.error('Error fetching dashboard stats:', error);
-        setError(error.response?.data?.message || error.message || 'Failed to load dashboard data');
-        // Keep default stats if API fails
-        setStats({
-          totalBusinesses: 0,
-          totalEmployees: 0,
-          monthlyPayroll: 0,
-          pendingTransactions: 0
+        setDashboardData(prev => ({ ...prev, loading: true }));
+        
+        // Fetch dashboard summary data
+        const summaryResponse = await api.get('/dashboard/summary');
+        const summaryData = summaryResponse.data.data.summary;
+        const businessesData = summaryResponse.data.data.businesses;
+        
+        setBusinesses(businessesData);
+        setDashboardData({
+          totalBusinesses: summaryData.totalBusinesses,
+          totalEmployees: summaryData.totalEmployees,
+          monthlyPayroll: summaryData.monthlyPayroll,
+          pendingTransactions: summaryData.pendingTransactions,
+          loading: false
         });
-      } finally {
-        setLoading(false);
+
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+        setDashboardData(prev => ({ ...prev, loading: false }));
       }
     };
 
     if (user) {
-      fetchStats();
+      fetchDashboardData();
     }
   }, [user]);
 
@@ -125,8 +126,7 @@ const Dashboard: React.FC = () => {
     setTabValue(newValue);
   };
 
-  // Sample data for demonstration - replaced with real data above
-
+  // Remove the sample data - we now use real data from dashboardData state
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-JM', {
       style: 'currency',
@@ -140,7 +140,7 @@ const Dashboard: React.FC = () => {
       <AppBar position="static" sx={{ bgcolor: '#006633' }}>
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Account Easy - Business Financial Management
+            AccountEezy - Business Financial Management
           </Typography>
           <Chip 
             label={user?.role || 'User'} 
@@ -177,6 +177,16 @@ const Dashboard: React.FC = () => {
           <Home sx={{ mr: 1 }} />
           Home
         </MenuItem>
+        <MenuItem onClick={() => { navigate('/businesses'); handleMenuClose(); }}>
+          <Business sx={{ mr: 1 }} />
+          Manage Businesses
+        </MenuItem>
+        {user?.role === 'super_admin' && (
+          <MenuItem onClick={() => { navigate('/admin'); handleMenuClose(); }}>
+            <SupervisorAccount sx={{ mr: 1 }} />
+            Admin Panel
+          </MenuItem>
+        )}
         <MenuItem onClick={handleMenuClose}>
           <AccountCircle sx={{ mr: 1 }} />
           Profile
@@ -209,13 +219,34 @@ const Dashboard: React.FC = () => {
 
         {/* Tab Panels */}
         <TabPanel value={tabValue} index={0}>
-          {/* Error Alert */}
-          {error && (
-            <Alert severity="warning" sx={{ mb: 3 }}>
-              {error}
+          {/* Business Selection Warning */}
+          {!user?.selectedBusiness && (
+            <Alert 
+              severity="warning" 
+              sx={{ mb: 3 }}
+              action={
+                <Button 
+                  color="inherit" 
+                  size="small"
+                  onClick={() => navigate('/businesses')}
+                >
+                  Select Business
+                </Button>
+              }
+            >
+              <AlertTitle>No Business Selected</AlertTitle>
+              Some features may be limited without selecting a business. Please create or select a business to access all functionality.
             </Alert>
           )}
-          
+
+          {/* Current Business Display */}
+          {user?.selectedBusiness && businesses.length > 0 && (
+            <Alert severity="success" sx={{ mb: 3 }}>
+              <AlertTitle>Current Business</AlertTitle>
+              Working with: {businesses.find(b => b._id === user.selectedBusiness)?.name || 'Selected Business'}
+            </Alert>
+          )}
+
           {/* Stats Cards using CSS Grid */}
         <Box sx={{ 
           display: 'grid', 
@@ -235,7 +266,11 @@ const Dashboard: React.FC = () => {
                     Total Businesses
                   </Typography>
                   <Typography variant="h4">
-                    {loading ? <CircularProgress size={24} /> : stats.totalBusinesses}
+                    {dashboardData.loading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      dashboardData.totalBusinesses
+                    )}
                   </Typography>
                 </Box>
                 <Business sx={{ fontSize: 40, color: '#1976d2' }} />
@@ -251,7 +286,11 @@ const Dashboard: React.FC = () => {
                     Total Employees
                   </Typography>
                   <Typography variant="h4">
-                    {loading ? <CircularProgress size={24} /> : stats.totalEmployees}
+                    {dashboardData.loading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      dashboardData.totalEmployees
+                    )}
                   </Typography>
                 </Box>
                 <People sx={{ fontSize: 40, color: '#388e3c' }} />
@@ -267,7 +306,11 @@ const Dashboard: React.FC = () => {
                     Monthly Payroll
                   </Typography>
                   <Typography variant="h5">
-                    {loading ? <CircularProgress size={20} /> : formatCurrency(stats.monthlyPayroll)}
+                    {dashboardData.loading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      formatCurrency(dashboardData.monthlyPayroll)
+                    )}
                   </Typography>
                 </Box>
                 <AttachMoney sx={{ fontSize: 40, color: '#f57c00' }} />
@@ -283,7 +326,11 @@ const Dashboard: React.FC = () => {
                     Pending Items
                   </Typography>
                   <Typography variant="h4">
-                    {loading ? <CircularProgress size={24} /> : stats.pendingTransactions}
+                    {dashboardData.loading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      dashboardData.pendingTransactions
+                    )}
                   </Typography>
                 </Box>
                 <Assessment sx={{ fontSize: 40, color: '#7b1fa2' }} />
@@ -452,9 +499,31 @@ const Dashboard: React.FC = () => {
           {user?.selectedBusiness ? (
             <SubscriptionManager businessId={user.selectedBusiness} />
           ) : (
-            <Typography variant="body1" color="error" align="center">
-              Please create or select a business to manage subscriptions
-            </Typography>
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Business sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h6" gutterBottom>
+                No Business Selected
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                Please create or select a business to manage subscriptions and access all features.
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => navigate('/businesses')}
+                  startIcon={<Business />}
+                >
+                  Manage Businesses
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={() => setTabValue(0)}
+                >
+                  Back to Dashboard
+                </Button>
+              </Box>
+            </Paper>
           )}
         </TabPanel>
       </Container>

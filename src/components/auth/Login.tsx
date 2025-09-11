@@ -16,7 +16,6 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { User } from '../../services/authService';
 
 interface LoginFormData {
   email: string;
@@ -38,15 +37,9 @@ const Login: React.FC = () => {
     clearError();
     console.log('Login attempt:', { email: data.email, password: '***' });
     try {
-      const userData = await login(data.email, data.password) as User | void;
-      console.log('Login successful, user role:', userData?.role);
-      
-      // Redirect based on user role
-      if (userData && userData.role === 'super_admin') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
+      await login(data.email, data.password);
+      console.log('Login successful, navigating to dashboard');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
       // Error is handled by the context
@@ -66,7 +59,7 @@ const Login: React.FC = () => {
         <Paper elevation={3} sx={{ padding: 4, width: '100%' }}>
           <Box sx={{ textAlign: 'center', mb: 3 }}>
             <Typography component="h1" variant="h4" color="primary" gutterBottom>
-              Account Easy
+              AccountEezy
             </Typography>
             <Typography variant="h6" color="textSecondary">
               Jamaica Financial Staffing System
