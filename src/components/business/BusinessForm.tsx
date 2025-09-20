@@ -105,9 +105,9 @@ const BusinessForm: React.FC<BusinessFormProps> = ({
     country: business?.address?.country || 'Jamaica',
     
     // Contact Information
-    phone: business?.contact?.phone || '',
-    email: business?.contact?.email || '',
-    website: business?.contact?.website || ''
+    phone: business?.contactInfo?.phone || '',
+    email: business?.contactInfo?.email || '',
+    website: business?.contactInfo?.website || ''
   });
 
   const steps = ['Basic Information', 'Address Details', 'Contact Information'];
@@ -127,6 +127,9 @@ const BusinessForm: React.FC<BusinessFormProps> = ({
     }));
   };
 
+  const onlyDigits = (v: string) => (v || '').replace(/\D/g, '');
+  const isValidNineDigits = (v: string) => onlyDigits(v).length === 9;
+
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 0: // Basic Information
@@ -134,6 +137,8 @@ const BusinessForm: React.FC<BusinessFormProps> = ({
           formData.name &&
           formData.registrationNumber &&
           formData.trn &&
+          isValidNineDigits(formData.trn) &&
+          (!formData.nis || isValidNineDigits(formData.nis)) &&
           formData.businessType &&
           formData.industry
         );
@@ -169,6 +174,19 @@ const BusinessForm: React.FC<BusinessFormProps> = ({
 
   const handleSubmit = async () => {
     if (!validateStep(2)) {
+      // Provide more specific feedback for TRN/NIS when invalid
+      if (!formData.trn) {
+        setError('TRN is required.');
+        return;
+      }
+      if (!isValidNineDigits(formData.trn)) {
+        setError('TRN must be exactly 9 digits (numbers only).');
+        return;
+      }
+      if (formData.nis && !isValidNineDigits(formData.nis)) {
+        setError('NIS must be exactly 9 digits (numbers only) if provided.');
+        return;
+      }
       setError('Please fill in all required fields.');
       return;
     }
@@ -177,25 +195,38 @@ const BusinessForm: React.FC<BusinessFormProps> = ({
       setLoading(true);
       setError(null);
 
+      // Sanitize inputs
+      const trnSanitized = onlyDigits(formData.trn);
+      const nisSanitized = formData.nis ? onlyDigits(formData.nis) : undefined;
+      const regSanitized = formData.registrationNumber.trim();
+      const nameSanitized = formData.name.trim();
+      const phoneSanitized = (formData.phone || '').trim();
+      const emailSanitized = (formData.email || '').trim();
+      const websiteSanitized = (formData.website || '').trim() || undefined;
+      const streetSanitized = formData.street.trim();
+      const citySanitized = formData.city.trim();
+      const parishSanitized = formData.parish;
+      const descriptionSanitized = formData.description?.trim() || undefined;
+
       const businessData = {
-        name: formData.name,
-        registrationNumber: formData.registrationNumber,
-        trn: formData.trn,
-        nis: formData.nis || undefined,
+        name: nameSanitized,
+        registrationNumber: regSanitized,
+        trn: trnSanitized,
+        nis: nisSanitized,
         businessType: formData.businessType,
         industry: formData.industry,
-        description: formData.description || undefined,
+        description: descriptionSanitized,
         address: {
-          street: formData.street,
-          city: formData.city,
-          parish: formData.parish,
+          street: streetSanitized,
+          city: citySanitized,
+          parish: parishSanitized,
           postalCode: formData.postalCode,
           country: formData.country || 'Jamaica'
         },
         contactInfo: {
-          phone: formData.phone,
-          email: formData.email,
-          website: formData.website || undefined
+          phone: phoneSanitized,
+          email: emailSanitized,
+          website: websiteSanitized
         },
         payrollSettings: {
           payPeriod: 'monthly',
@@ -210,7 +241,7 @@ const BusinessForm: React.FC<BusinessFormProps> = ({
         fiscalYearEnd: new Date(new Date().getFullYear(), 2, 31), // March 31st
         settings: {
           currency: 'JMD',
-          timeZone: 'America/Jamaica',
+          timezone: 'America/Jamaica',
           dateFormat: 'MM/DD/YYYY'
         }
       };
