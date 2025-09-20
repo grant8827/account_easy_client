@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5003/api',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5006/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -45,7 +45,7 @@ api.interceptors.response.use(
 
         // Try to get a new token using the current token
         const response = await axios.post(
-          `${process.env.REACT_APP_API_URL || 'http://localhost:5003/api'}/auth/refresh-token`,
+          `${process.env.REACT_APP_API_URL || 'http://localhost:5006/api'}/auth/refresh-token`,
           {},
           {
             headers: {
