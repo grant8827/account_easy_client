@@ -138,12 +138,12 @@ const Register: React.FC = () => {
               type="tel"
               {...register('phone', {
                 pattern: {
-                  value: /^(\+1|1)?[-.\s]?\(?876\)?[-.\s]?\d{3}[-.\s]?\d{4}$/,
-                  message: 'Please enter a valid Jamaica phone number',
+                  value: /^[1-9]\d{9,14}$/,
+                  message: 'Please enter a valid phone number (digits only, 10-15 characters)',
                 },
               })}
               error={!!errors.phone}
-              helperText={errors.phone?.message || 'Format: 876-XXX-XXXX'}
+              helperText={errors.phone?.message || 'Format: 8765551234 (digits only)'}
             />
 
             <TextField
@@ -183,8 +183,8 @@ const Register: React.FC = () => {
                 {...register('password', {
                   required: 'Password is required',
                   minLength: {
-                    value: 6,
-                    message: 'Password must be at least 6 characters',
+                    value: 8,
+                    message: 'Password must be at least 8 characters',
                   },
                 })}
                 error={!!errors.password}

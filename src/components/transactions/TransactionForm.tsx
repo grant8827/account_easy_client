@@ -87,73 +87,93 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ open, onClose, onSubm
   };
 
   const handleSubmit = async () => {
+    setLoading(true);
+    setError(null);
+
+    // Validation
+    if (!formData.businessId) {
+      setError('Please select a business.');
+      setLoading(false);
+      return;
+    }
+    if (!formData.type) {
+      setError('Transaction type is required.');
+      setLoading(false);
+      return;
+    }
+    if (!formData.category) {
+      setError('Category is required.');
+      setLoading(false);
+      return;
+    }
+    if (!formData.description) {
+      setError('Description is required.');
+      setLoading(false);
+      return;
+    }
+    if (!formData.amount || formData.amount <= 0) {
+      setError('Amount must be greater than zero.');
+      setLoading(false);
+      return;
+    }
+    if (!formData.currency) {
+      setError('Currency is required.');
+      setLoading(false);
+      return;
+    }
+    if (!formData.date) {
+      setError('Date is required.');
+      setLoading(false);
+      return;
+    }
+    if (!formData.paymentMethod) {
+      setError('Payment method is required.');
+      setLoading(false);
+      return;
+    }
+
+    // Sanitize and map fields
+    const transactionData = {
+      business: formData.businessId,
+      type: formData.type,
+      category: formData.category.trim(),
+      description: formData.description.trim(),
+      amount: Number(formData.amount),
+      currency: formData.currency,
+      date: new Date(formData.date),
+      paymentMethod: formData.paymentMethod,
+      reference: formData.referenceNumber?.trim() || undefined,
+      ...(formData.fromName && {
+        customer: {
+          name: formData.fromName.trim(),
+          type: formData.fromType
+        }
+      }),
+      ...(formData.toName && {
+        vendor: {
+          name: formData.toName.trim(),
+          type: formData.toType
+        }
+      }),
+      taxInfo: {
+        isTaxable: !!formData.isTaxable,
+        gctRate: formData.isTaxable ? formData.gctRate / 100 : 0,
+        gctAmount: formData.isTaxable ? (formData.amount * formData.gctRate) / 100 : 0
+      },
+      status: formData.status
+    };
+
     try {
-      setLoading(true);
-      setError(null);
-
-      if (!formData.businessId) {
-        setError('Please select a business');
-        return;
-      }
-      if (!formData.description || !formData.category || formData.amount <= 0) {
-        setError('Please fill in all required fields: Description, Category, and Amount');
-        return;
-      }
-
-      // Calculate tax amounts
-      const gctAmount = formData.isTaxable ? (formData.amount * formData.gctRate) / 100 : 0;
-
-      // Create the transaction data
-      const transactionData = {
-        business: formData.businessId,
-        type: formData.type,
-        category: formData.category,
-        description: formData.description,
-        amount: formData.amount,
-        currency: formData.currency,
-        date: new Date(formData.date),
-        paymentMethod: formData.paymentMethod,
-        reference: formData.referenceNumber || undefined,
-        ...(formData.fromName && {
-          customer: {
-            name: formData.fromName,
-            type: formData.fromType
-          }
-        }),
-        ...(formData.toName && {
-          vendor: {
-            name: formData.toName,
-            type: formData.toType
-          }
-        }),
-        taxInfo: {
-          isTaxable: formData.isTaxable,
-          ...(formData.isTaxable && {
-            gctRate: formData.gctRate / 100, // Convert percentage to decimal
-            gctAmount: gctAmount
-          })
-        },
-        status: formData.status
-      };
-
       const endpoint = transaction ? `/transactions/${transaction._id}` : '/transactions';
       const method = transaction ? 'put' : 'post';
-
       await api[method](endpoint, transactionData);
-      
       onSubmit();
       onClose();
     } catch (err: any) {
       console.error('Transaction creation error:', err);
-      
       const errorData = err.response?.data;
       if (errorData?.errors && Array.isArray(errorData.errors)) {
-        const errorMessages = errorData.errors.map((error: any) => 
-          `${error.field}: ${error.message}`
-        ).join('\n');
-        setError(`Validation errors:\n${errorMessages}`);
-      } else if (errorData?.details && Array.isArray(errorData.details)) {
-        setError(`Validation errors:\n${errorData.details.join('\n')}`);
+        setError(errorData.errors.map((e: any) => e.message).join('\n'));
       } else if (errorData?.message) {
         setError(errorData.message);
       } else {
@@ -175,70 +195,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ open, onClose, onSubm
     { value: 'adjustment', label: 'Adjustment' }
   ];
 
-  const getTransactionCategories = (type: string) => {
-    switch (type) {
-      case 'income':
-        return [
-          { value: 'sales_revenue', label: 'Sales Revenue' },
-          { value: 'service_revenue', label: 'Service Revenue' },
-          { value: 'interest_income', label: 'Interest Income' },
-          { value: 'rental_income', label: 'Rental Income' },
-          { value: 'other_income', label: 'Other Income' }
-        ];
-      case 'expense':
-        return [
-          { value: 'salaries_wages', label: 'Salaries & Wages' },
-          { value: 'rent_utilities', label: 'Rent & Utilities' },
-          { value: 'office_supplies', label: 'Office Supplies' },
-          { value: 'marketing_advertising', label: 'Marketing & Advertising' },
-          { value: 'professional_fees', label: 'Professional Fees' },
-          { value: 'insurance', label: 'Insurance' },
-          { value: 'depreciation', label: 'Depreciation' },
-          { value: 'interest_expense', label: 'Interest Expense' },
-          { value: 'travel_entertainment', label: 'Travel & Entertainment' },
-          { value: 'maintenance_repairs', label: 'Maintenance & Repairs' },
-          { value: 'taxes_licenses', label: 'Taxes & Licenses' },
-          { value: 'other_expenses', label: 'Other Expenses' }
-        ];
-      case 'asset_purchase':
-      case 'asset_sale':
-        return [
-          { value: 'cash', label: 'Cash' },
-          { value: 'accounts_receivable', label: 'Accounts Receivable' },
-          { value: 'inventory', label: 'Inventory' },
-          { value: 'equipment', label: 'Equipment' },
-          { value: 'buildings', label: 'Buildings' },
-          { value: 'land', label: 'Land' },
-          { value: 'investments', label: 'Investments' },
-          { value: 'other_assets', label: 'Other Assets' }
-        ];
-      case 'liability':
-        return [
-          { value: 'accounts_payable', label: 'Accounts Payable' },
-          { value: 'loans_payable', label: 'Loans Payable' },
-          { value: 'accrued_expenses', label: 'Accrued Expenses' },
-          { value: 'other_liabilities', label: 'Other Liabilities' }
-        ];
-      case 'equity':
-        return [
-          { value: 'owner_equity', label: 'Owner Equity' },
-          { value: 'retained_earnings', label: 'Retained Earnings' },
-          { value: 'capital_contributions', label: 'Capital Contributions' }
-        ];
-      case 'transfer':
-      case 'adjustment':
-        return [
-          { value: 'other_income', label: 'Other Income' },
-          { value: 'other_expenses', label: 'Other Expenses' },
-          { value: 'other_assets', label: 'Other Assets' }
-        ];
-      default:
-        return [
-          { value: 'other_income', label: 'Other Income' },
-          { value: 'other_expenses', label: 'Other Expenses' }
-        ];
-    }
-  };
+  // Removed unused getTransactionCategories function to fix compile error.
 
   const paymentMethods = [
     { value: 'cash', label: 'Cash' },
