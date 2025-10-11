@@ -1,12 +1,37 @@
 import axios from 'axios';
 
-// Define the API URL once - now pointing to Django backend
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+// Define the API URL - dynamically switch between local and production
+const getApiBaseUrl = () => {
+  // Check if we have an explicit environment variable
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  // Auto-detect environment based on hostname
+  const hostname = window.location.hostname;
+  const isLocalDevelopment = hostname === 'localhost' || hostname === '127.0.0.1';
+  
+  if (isLocalDevelopment) {
+    // Local development - use Django dev server port
+    return 'http://localhost:8002/api';
+  } else {
+    // Production (Railway or other deployment)
+    return 'https://account-eezy-django-production.up.railway.app/api';
+  }
+};
 
-// Debug logging
-console.log('🔍 API Configuration:');
-console.log('REACT_APP_API_URL from env:', process.env.REACT_APP_API_URL);
-console.log('Final API_BASE_URL:', API_BASE_URL);
+const API_BASE_URL = getApiBaseUrl();
+
+// Debug logging (only show in development or when debug is enabled)
+if (process.env.NODE_ENV === 'development' || process.env.REACT_APP_DEBUG === 'true') {
+  console.log('🔍 API Configuration:');
+  console.log('Environment:', process.env.NODE_ENV);
+  console.log('Hostname:', window.location.hostname);
+  console.log('Is Local Development:', window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  console.log('REACT_APP_API_URL from env:', process.env.REACT_APP_API_URL);
+  console.log('Final API_BASE_URL:', API_BASE_URL);
+  console.log('---');
+}
 
 // Create axios instance with base configuration
 const api = axios.create({
