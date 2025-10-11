@@ -5,7 +5,6 @@ import Footer from '../components/Footer';
 import HomePage from './HomePage';
 import AboutPage from './AboutPage';
 import ContactPage from './ContactPage';
-import PricingPage from './PricingPage';
 import '../App.css';
 
 const LandingPage: React.FC = () => {
@@ -18,15 +17,13 @@ const LandingPage: React.FC = () => {
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'home':
-        return <HomePage />;
+        return <HomePage onPageChange={handlePageChange} />;
       case 'about':
         return <AboutPage />;
       case 'contact':
         return <ContactPage />;
-      case 'pricing':
-        return <PricingPage />;
       default:
-        return <HomePage />;
+        return <HomePage onPageChange={handlePageChange} />;
     }
   };
 

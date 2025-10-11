@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Define the API URL once
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5008/api';
+// Define the API URL once - now pointing to Django backend
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 // Debug logging
 console.log('🔍 API Configuration:');
@@ -20,14 +20,36 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token && token !== 'undefined' && token !== 'null') {
-      // Ensure token is properly formatted
-      const cleanToken = token.trim();
-      config.headers.Authorization = cleanToken.startsWith('Bearer ') ? cleanToken : `Bearer ${cleanToken}`;
+    console.log('🚀 API Request Interceptor:');
+    console.log('  Method:', config.method?.toUpperCase());
+    console.log('  URL:', config.url);
+    console.log('  Data:', config.data);
+    console.log('  Headers before processing:', config.headers);
+    
+    // List of endpoints that don't require authentication
+    const publicEndpoints = ['/auth/register/', '/auth/login/', '/auth/refresh/'];
+    const isPublicEndpoint = publicEndpoints.some(endpoint => config.url?.includes(endpoint));
+    
+    console.log('  Is public endpoint:', isPublicEndpoint);
+    
+    // Only add auth header for protected endpoints
+    if (!isPublicEndpoint) {
+      const token = localStorage.getItem('token');
+      if (token && token !== 'undefined' && token !== 'null') {
+        // Ensure token is properly formatted
+        const cleanToken = token.trim();
+        config.headers.Authorization = cleanToken.startsWith('Bearer ') ? cleanToken : `Bearer ${cleanToken}`;
+        console.log('  Added auth header');
+      } else {
+        console.log('  No valid token found');
+      }
+    } else {
+      console.log('  Skipping auth header for public endpoint');
     }
+    
     // Ensure Content-Type is set
     config.headers['Content-Type'] = 'application/json';
+    console.log('  Final headers:', config.headers);
     return config;
   },
   (error) => {
@@ -37,8 +59,18 @@ api.interceptors.request.use(
 
 // Response interceptor to handle token refresh
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('🎉 API Response Success:', response.status, response.config.url);
+    return response;
+  },
   async (error) => {
+    console.log('❌ API Response Error:', error);
+    console.log('  Error message:', error.message);
+    console.log('  Error code:', error.code);
+    console.log('  Response status:', error.response?.status);
+    console.log('  Response data:', error.response?.data);
+    console.log('  Request config:', error.config);
+    
     const originalRequest = error.config;
 
     // Only handle 401 errors from API endpoints (not for static files)
@@ -53,7 +85,7 @@ api.interceptors.response.use(
 
         // Try to get a new token using the current token
         const response = await axios.post(
-          `${API_BASE_URL}/auth/refresh-token`,
+          `${API_BASE_URL}/auth/refresh/`,
           {},
           {
             headers: {
@@ -87,16 +119,96 @@ api.interceptors.response.use(
   }
 );
 
-// Subscription API endpoints
+// Subscription API endpoints - updated for Django backend
 export const subscriptionApi = {
   getCurrentSubscription: (businessId: string) => 
-    api.get(`/subscriptions/businesses/${businessId}/subscription`),
+    api.get(`/subscriptions/${businessId}/`),
   
-  updateSubscription: (businessId: string, data: { plan: string; billingCycle: 'monthly' | 'yearly' }) =>
-    api.put(`/subscriptions/businesses/${businessId}/subscription`, data),
+  updateSubscription: (businessId: string, data: { plan_type: string; billing_cycle: 'monthly' | 'quarterly' | 'annually' }) =>
+    api.put(`/subscriptions/${businessId}/update/`, data),
   
   cancelSubscription: (businessId: string) =>
-    api.post(`/subscriptions/businesses/${businessId}/subscription/cancel`),
+    api.post(`/subscriptions/${businessId}/cancel/`),
+  
+  getUsage: (businessId: string) =>
+    api.get(`/subscriptions/${businessId}/usage/`),
+  
+  getPlans: () =>
+    api.get('/subscriptions/plans/'),
+};
+
+// PayPal API endpoints - integrated with Django backend
+export const paypalApi = {
+  createOrder: (data: { 
+    plan_type: string; 
+    billing_cycle: 'monthly' | 'quarterly' | 'annually';
+    user_email?: string;
+  }) => 
+    api.post('/paypal/create-order/', data),
+  
+  capturePayment: (data: { 
+    order_id: string; 
+    payer_id?: string;
+  }) => 
+    api.post('/paypal/capture-payment/', data),
+  
+  getPaymentStatus: (paymentId: string) =>
+    api.get(`/paypal/payment-status/${paymentId}/`),
+  
+  simulateWebhook: (data: {
+    event_type: string;
+    resource: {
+      id: string;
+      status: string;
+      [key: string]: any;
+    };
+  }) =>
+    api.post('/paypal/simulate-webhook/', data),
+};
+
+// Business registration API - for post-payment business creation
+export const businessApi = {
+  createBusiness: (data: {
+    business_name: string;
+    industry?: string;
+    address?: string;
+    phone?: string;
+    subscription_plan: string;
+    payment_id?: string;
+  }) =>
+    api.post('/businesses/', data),
+  
+  getBusiness: (businessId: string) =>
+    api.get(`/businesses/${businessId}/`),
+  
+  updateBusiness: (businessId: string, data: any) =>
+    api.put(`/businesses/${businessId}/`, data),
+};
+
+// Auth API endpoints
+export const authApi = {
+  register: (data: {
+    email: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+  }) =>
+    api.post('/auth/register/', data),
+  
+  login: (data: {
+    email: string;
+    password: string;
+  }) =>
+    api.post('/auth/login/', data),
+  
+  logout: () =>
+    api.post('/auth/logout/'),
+  
+  getCurrentUser: () =>
+    api.get('/auth/user/'),
+  
+  refreshToken: () =>
+    api.post('/auth/refresh/'),
 };
 
 export default api;

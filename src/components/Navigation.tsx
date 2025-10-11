@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   AppBar,
   Toolbar,
@@ -14,7 +15,7 @@ import {
   ListItemText,
   useMediaQuery
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+
 import { Menu as MenuIcon, Close } from '@mui/icons-material';
 
 interface NavigationProps {
@@ -31,7 +32,6 @@ const Navigation: React.FC<NavigationProps> = ({ onPageChange, currentPage }) =>
   const navItems = [
     { label: 'Home', value: 'home' },
     { label: 'About', value: 'about' },
-    { label: 'Pricing', value: 'pricing' },
     { label: 'Contact', value: 'contact' }
   ];
 
@@ -73,6 +73,22 @@ const Navigation: React.FC<NavigationProps> = ({ onPageChange, currentPage }) =>
             />
           </ListItem>
         ))}
+        <ListItem 
+          component="button"
+          onClick={() => {
+            navigate('/pricing');
+            setMobileDrawerOpen(false);
+          }}
+          sx={{
+            border: 'none',
+            cursor: 'pointer',
+            '&:hover': {
+              backgroundColor: alpha(theme.palette.primary.main, 0.1)
+            }
+          }}
+        >
+          <ListItemText primary="Pricing" />
+        </ListItem>
         <ListItem>
           <Box sx={{ width: '100%', pt: 2 }}>
             <Button 
@@ -92,7 +108,7 @@ const Navigation: React.FC<NavigationProps> = ({ onPageChange, currentPage }) =>
               variant="contained" 
               color="primary"
               onClick={() => {
-                navigate('/register');
+                navigate('/pricing');
                 setMobileDrawerOpen(false);
               }}
               sx={{ 
@@ -162,6 +178,14 @@ const Navigation: React.FC<NavigationProps> = ({ onPageChange, currentPage }) =>
               
               <Button 
                 color="primary" 
+                onClick={() => navigate('/pricing')}
+                sx={{ mx: 0.5 }}
+              >
+                Pricing
+              </Button>
+              
+              <Button 
+                color="primary" 
                 onClick={() => navigate('/login')}
                 sx={{ mr: 1, ml: 2 }}
               >
@@ -170,7 +194,7 @@ const Navigation: React.FC<NavigationProps> = ({ onPageChange, currentPage }) =>
               <Button 
                 variant="contained" 
                 color="primary"
-                onClick={() => navigate('/register')}
+                onClick={() => navigate('/pricing')}
                 sx={{ 
                   backgroundColor: '#fac83e', 
                   color: theme.palette.primary.main, 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Box, 
   Container, 
@@ -15,7 +16,6 @@ import {
   Switch,
   FormControlLabel
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import { 
   Check,
   Star,
@@ -25,9 +25,13 @@ import {
   Assessment
 } from '@mui/icons-material';
 
-const PricingPage: React.FC = () => {
-  const navigate = useNavigate();
+interface PricingPageProps {
+  onPageChange?: (page: string) => void;
+}
+
+const PricingPage: React.FC<PricingPageProps> = ({ onPageChange }) => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const [isAnnual, setIsAnnual] = useState(false);
 
   const plans = [
@@ -53,8 +57,8 @@ const PricingPage: React.FC = () => {
     {
       name: 'Professional',
       description: 'Best for growing businesses with more complex needs',
-      monthlyPrice: 5000,
-      annualPrice: 50000,
+      monthlyPrice: 7500,
+      annualPrice: 75000,
       popular: true,
       features: [
         'Up to 25 employees',
@@ -71,11 +75,11 @@ const PricingPage: React.FC = () => {
     {
       name: 'Enterprise',
       description: 'For large businesses requiring premium features',
-      monthlyPrice: 10000,
-      annualPrice: 100000,
+      monthlyPrice: 12500,
+      annualPrice: 125000,
       popular: false,
       features: [
-        'Unlimited employees',
+        '50 employees',
         'Full payroll suite',
         'Complete tax & compliance tools',
         'Custom reports & analytics',
@@ -123,6 +127,49 @@ const PricingPage: React.FC = () => {
 
   return (
     <Box>
+      {/* Navigation Bar */}
+      <Box
+        sx={{
+          backgroundColor: '#d9d9d9ff',
+          borderBottom: '1px solid #e0e0e0',
+          py: 1
+        }}
+      >
+        <Container maxWidth="lg">
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box
+              onClick={() => navigate('/')}
+              sx={{ cursor: 'pointer' }}
+            >
+              <img 
+                src="/accounteezy-logo-bg.png" 
+                alt="AccountEezy Logo" 
+                style={{ height: 60, width: 108 }} 
+              />
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button 
+                color="primary" 
+                onClick={() => navigate('/login')}
+              >
+                Login
+              </Button>
+              <Button 
+                variant="contained" 
+                onClick={() => navigate('/register')}
+                sx={{ 
+                  backgroundColor: '#fac83e', 
+                  color: theme.palette.primary.main, 
+                  '&:hover': { backgroundColor: '#e6b835' } 
+                }}
+              >
+                Sign Up
+              </Button>
+            </Box>
+          </Box>
+        </Container>
+      </Box>
+      
       {/* Hero Section */}
       <Box
         sx={{
@@ -188,7 +235,7 @@ const PricingPage: React.FC = () => {
       </Box>
 
       {/* Pricing Cards Section */}
-      <Container maxWidth="lg" sx={{ py: 8, mt: -6 }}>
+      <Container maxWidth="lg" sx={{ py: 8, mt: -2 }}>
         <Box sx={{ 
           display: 'grid', 
           gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, 
@@ -201,6 +248,7 @@ const PricingPage: React.FC = () => {
                 position: 'relative',
                 height: '100%',
                 display: 'flex',
+                paddingTop: '25px',
                 flexDirection: 'column',
                 transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
                 '&:hover': {
@@ -220,8 +268,9 @@ const PricingPage: React.FC = () => {
                   icon={<Star />}
                   sx={{
                     position: 'absolute',
-                    top: -12,
+                    top: -8,
                     left: '50%',
+                    marginTop: '10px',
                     transform: 'translateX(-50%)',
                     backgroundColor: theme.palette.primary.main,
                     color: 'white',
@@ -274,7 +323,17 @@ const PricingPage: React.FC = () => {
                   variant={plan.popular ? "contained" : "outlined"}
                   size="large"
                   fullWidth
-                  onClick={() => navigate('/register')}
+                  onClick={() => {
+                    // Store selected plan in localStorage for the payment process
+                    localStorage.setItem('selectedPlan', JSON.stringify({
+                      name: plan.name,
+                      price: isAnnual ? plan.annualPrice : plan.monthlyPrice,
+                      billing: isAnnual ? 'annual' : 'monthly',
+                      features: plan.features
+                    }));
+                    // Navigate to payment page
+                    navigate('/payment');
+                  }}
                   sx={{ 
                     mt: 3,
                     py: 1.5,
@@ -287,7 +346,7 @@ const PricingPage: React.FC = () => {
                     })
                   }}
                 >
-                  Get Started
+                  Choose {plan.name}
                 </Button>
               </CardContent>
             </Card>
@@ -441,7 +500,10 @@ const PricingPage: React.FC = () => {
               <Button 
                 variant="contained" 
                 size="large"
-                onClick={() => navigate('/register')}
+                onClick={() => {
+                  // Scroll to pricing cards
+                  window.scrollTo({ top: 400, behavior: 'smooth' });
+                }}
                 sx={{ 
                   backgroundColor: '#fac83e',
                   color: theme.palette.primary.main,
@@ -453,12 +515,12 @@ const PricingPage: React.FC = () => {
                   fontSize: '1.1rem'
                 }}
               >
-                Start Free Trial
+                Choose Your Plan
               </Button>
               <Button 
                 variant="outlined" 
                 size="large"
-                onClick={() => navigate('/contact')}
+                onClick={() => navigate('/#contact')}
                 sx={{ 
                   borderColor: '#fac83e',
                   color: '#fac83e',

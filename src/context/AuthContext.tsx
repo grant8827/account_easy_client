@@ -134,19 +134,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const register = async (userData: any): Promise<void> => {
+    console.log('AuthContext: Starting registration with data:', userData);
+    console.log('AuthContext: Registration data JSON:', JSON.stringify(userData, null, 2));
     dispatch({ type: 'LOGIN_START' });
     try {
       const response = await authService.register(userData);
+      console.log('AuthContext: Registration response:', response);
       if (response.success) {
+        console.log('AuthContext: Registration successful');
         dispatch({ type: 'LOGIN_SUCCESS', payload: response.data.user });
+        // Registration successful - don't throw error
       } else {
+        console.log('AuthContext: Registration failed with message:', response.message);
         dispatch({ type: 'LOGIN_FAILURE', payload: response.message });
+        // Throw error so Register component knows it failed
+        throw new Error(response.message);
       }
     } catch (error: any) {
+      console.error('AuthContext: Registration error caught:', error);
+      console.error('AuthContext: Error response data:', error.response?.data);
+      const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
       dispatch({ 
         type: 'LOGIN_FAILURE', 
-        payload: error.response?.data?.message || 'Registration failed' 
+        payload: errorMessage
       });
+      // Re-throw error so Register component can handle navigation
+      throw error;
     }
   };
 

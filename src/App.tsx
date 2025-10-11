@@ -14,6 +14,11 @@ import EmployeeList from './components/employees/EmployeeList';
 import PayrollModule from './components/payroll/PayrollModule';
 import TaxModule from './components/tax/TaxModule';
 import TransactionList from './components/transactions/TransactionList';
+import ApiTest from './components/debug/ApiTest';
+import RegistrationDebugger from './components/debug/RegistrationDebugger';
+import PricingPage from './pages/PricingPage';
+import PaymentPage from './pages/PaymentPageWithRealPayPal';
+import DebugEnvPage from './pages/DebugEnvPage';
 
 const theme = createTheme({
   palette: {
@@ -51,6 +56,11 @@ function App() {
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/api-test" element={<ApiTest />} />
+            <Route path="/debug-register" element={<RegistrationDebugger />} />
+            <Route path="/debug-env" element={<DebugEnvPage />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/payment" element={<PaymentPage />} />
             
             {/* Protected Routes */}
             <Route

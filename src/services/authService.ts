@@ -17,8 +17,9 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
+  password_confirm: string;
+  first_name: string;
+  last_name: string;
   role?: string;
   phone?: string;
   trn?: string;
@@ -41,7 +42,7 @@ export const authService = {
       console.log('authService: Making login request to:', '/auth/login');
       console.log('authService: Login credentials:', { email: credentials.email, password: '***' });
       
-      const response = await api.post('/auth/login', credentials);
+      const response = await api.post('/auth/login/', credentials);
       console.log('authService: Login response status:', response.status);
       console.log('authService: Login response data:', response.data);
       
@@ -68,17 +69,31 @@ export const authService = {
 
   // Register new user
   register: async (userData: RegisterData): Promise<AuthResponse> => {
-    const response = await api.post('/auth/register', userData);
-    
-    if (response.data.success) {
-      const { token, refreshToken, user } = response.data.data;
-      // Store the token without Bearer prefix - let the api service add it
-      localStorage.setItem('token', token);
-      localStorage.setItem('refreshToken', refreshToken);
-      localStorage.setItem('user', JSON.stringify(user));
+    try {
+      console.log('authService: Making registration request to:', '/auth/register/');
+      console.log('authService: Registration data:', userData);
+      console.log('authService: Registration data JSON:', JSON.stringify(userData, null, 2));
+      
+      const response = await api.post('/auth/register/', userData);
+      console.log('authService: Registration response status:', response.status);
+      console.log('authService: Registration response data:', response.data);
+      
+      if (response.data.success) {
+        const { token, refreshToken, user } = response.data.data;
+        // Store the token without Bearer prefix - let the api service add it
+        localStorage.setItem('token', token);
+        localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('user', JSON.stringify(user));
+        console.log('authService: Registration successful, tokens stored');
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('authService: Registration error:', error);
+      console.error('authService: Error response:', error.response?.data);
+      console.error('authService: Error status:', error.response?.status);
+      throw error;
     }
-    
-    return response.data;
   },
 
   // Logout user
@@ -88,7 +103,7 @@ export const authService = {
       if (refreshToken) {
         // First attempt to notify the server
         try {
-          await api.post('/auth/logout', { refreshToken });
+          await api.post('/auth/logout/', { refreshToken });
         } catch (error) {
           console.warn('Server logout notification failed:', error);
           // Continue with local cleanup even if server call fails
@@ -119,7 +134,7 @@ export const authService = {
       const refreshToken = localStorage.getItem('refreshToken');
       if (!refreshToken) return null;
 
-      const response = await api.post('/auth/refresh', { refreshToken });
+      const response = await api.post('/auth/refresh/', { refreshToken });
       const { token } = response.data;
       
       localStorage.setItem('token', token);
