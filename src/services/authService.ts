@@ -63,6 +63,22 @@ export const authService = {
       console.error('authService: Login error:', error);
       console.error('authService: Error response:', error.response?.data);
       console.error('authService: Error status:', error.response?.status);
+      
+      // Log detailed validation errors
+      if (error.response?.data?.errors) {
+        console.error('authService: Validation errors:', error.response.data.errors);
+      }
+      
+      // Log the full error object for debugging
+      console.error('authService: Full error object:', JSON.stringify({
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url,
+        method: error.config?.method
+      }, null, 2));
+      
       throw error;
     }
   },

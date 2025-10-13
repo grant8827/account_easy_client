@@ -95,7 +95,7 @@ const ApiTest: React.FC = () => {
 
       <Box sx={{ mt: 2 }}>
         <Typography variant="body2" color="text.secondary">
-          API Base URL: {process.env.REACT_APP_API_URL || 'http://localhost:8000/api'}
+          API Base URL: {process.env.REACT_APP_API_URL || 'http://localhost:8002/api'}
         </Typography>
       </Box>
     </Box>

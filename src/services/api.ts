@@ -52,7 +52,7 @@ api.interceptors.request.use(
     console.log('  Headers before processing:', config.headers);
     
     // List of endpoints that don't require authentication
-    const publicEndpoints = ['/auth/register/', '/auth/login/', '/auth/refresh/'];
+    const publicEndpoints = ['/auth/register/', '/auth/register-with-business/', '/auth/login/', '/auth/refresh/'];
     const isPublicEndpoint = publicEndpoints.some(endpoint => config.url?.includes(endpoint));
     
     console.log('  Is public endpoint:', isPublicEndpoint);
@@ -164,22 +164,44 @@ export const subscriptionApi = {
 
 // PayPal API endpoints - integrated with Django backend
 export const paypalApi = {
+  // Create PayPal order with proper Django backend format
   createOrder: (data: { 
+    plan_name: string;
     plan_type: string; 
     billing_cycle: 'monthly' | 'quarterly' | 'annually';
+    amount: number; // JMD amount
     user_email?: string;
   }) => 
-    api.post('/paypal/create-order/', data),
+    api.post('/subscriptions/paypal/create-order/', data),
   
+  // Capture PayPal payment
   capturePayment: (data: { 
-    order_id: string; 
-    payer_id?: string;
+    order_id: string;
   }) => 
-    api.post('/paypal/capture-payment/', data),
+    api.post('/subscriptions/paypal/capture-order/', data),
   
+  // Get payment status by ID
   getPaymentStatus: (paymentId: string) =>
-    api.get(`/paypal/payment-status/${paymentId}/`),
+    api.get(`/subscriptions/paypal/payment-status/${paymentId}/`),
   
+  // Get all user payments
+  getUserPayments: () =>
+    api.get('/subscriptions/paypal/user-payments/'),
+  
+  // Get current user subscription
+  getUserSubscription: () =>
+    api.get('/subscriptions/paypal/subscription/'),
+  
+  // Simulate payment success (development only)
+  simulatePayment: (data: {
+    plan_name: string;
+    plan_type: string;
+    billing_cycle: 'monthly' | 'quarterly' | 'annually';
+    amount: number;
+  }) =>
+    api.post('/subscriptions/paypal/simulate-payment/', data),
+  
+  // Legacy webhook simulation (keep for compatibility)
   simulateWebhook: (data: {
     event_type: string;
     resource: {
@@ -188,7 +210,7 @@ export const paypalApi = {
       [key: string]: any;
     };
   }) =>
-    api.post('/paypal/simulate-webhook/', data),
+    api.post('/subscriptions/paypal/simulate-webhook/', data),
 };
 
 // Business registration API - for post-payment business creation
@@ -219,6 +241,27 @@ export const authApi = {
     last_name: string;
   }) =>
     api.post('/auth/register/', data),
+  
+  // Enhanced registration with business and payment integration
+  registerWithBusiness: (data: {
+    email: string;
+    password: string;
+    password_confirm: string;
+    first_name: string;
+    last_name: string;
+    role?: string;
+    phone?: string;
+    trn?: string;
+    payment_id?: string;
+    plan_name?: string;
+    business_name?: string;
+    business_type?: string;
+    industry?: string;
+    parish?: string;
+    address?: string;
+    city?: string;
+  }) =>
+    api.post('/auth/register-with-business/', data),
   
   login: (data: {
     email: string;

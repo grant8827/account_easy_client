@@ -4,7 +4,7 @@ import api from './services/api';
 console.log('Environment variables check:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
-console.log('Expected API URL:', process.env.REACT_APP_API_URL || 'http://localhost:8000/api');
+console.log('Expected API URL:', process.env.REACT_APP_API_URL || 'http://localhost:8002/api');
 
 // Test actual API call
 

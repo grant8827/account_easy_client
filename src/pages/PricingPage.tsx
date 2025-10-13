@@ -331,8 +331,8 @@ const PricingPage: React.FC<PricingPageProps> = ({ onPageChange }) => {
                       billing: isAnnual ? 'annual' : 'monthly',
                       features: plan.features
                     }));
-                    // Navigate to payment page
-                    navigate('/payment');
+                    // Navigate to registration page with selected plan
+                    navigate('/register');
                   }}
                   sx={{ 
                     mt: 3,

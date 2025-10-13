@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import PayPalWrapper from '../components/payment/PayPalWrapper';
+import PaymentBypass from '../components/payment/PaymentBypass';
+import { authApi } from '../services/api';
 import { 
   Box, 
   Container, 
@@ -22,7 +23,6 @@ import {
 } from '@mui/material';
 import { 
   Check,
-  CreditCard,
   Security,
   ArrowBack
 } from '@mui/icons-material';
@@ -49,9 +49,22 @@ const PaymentPage: React.FC = () => {
     // Get selected plan from localStorage
     const planData = localStorage.getItem('selectedPlan');
     if (planData) {
-      setSelectedPlan(JSON.parse(planData));
+      try {
+        const parsedPlan = JSON.parse(planData);
+        if (parsedPlan && parsedPlan.name && parsedPlan.price) {
+          setSelectedPlan(parsedPlan);
+        } else {
+          console.warn('Invalid plan data found, redirecting to pricing');
+          navigate('/pricing');
+        }
+      } catch (error) {
+        console.error('Error parsing plan data:', error);
+        localStorage.removeItem('selectedPlan'); // Clear corrupted data
+        navigate('/pricing');
+      }
     } else {
-      // If no plan selected, redirect to pricing
+      // If no plan selected, redirect to pricing to start the flow
+      console.log('No plan selected, redirecting to pricing page');
       navigate('/pricing');
     }
 
@@ -74,27 +87,76 @@ const PaymentPage: React.FC = () => {
     return (jmdAmount / 160).toFixed(2);
   };
 
-  const handlePayPalSuccess = (details: any) => {
-    console.log('PayPal payment successful:', details);
+  const handlePayPalSuccess = async (details: any) => {
+    console.log('Payment successful:', details);
+    setProcessing(true);
     
-    const paymentDetails = {
-      transactionId: details.id,
-      payerEmail: details.payer.email_address,
-      amount: details.purchase_units[0].amount.value,
-      currency: details.purchase_units[0].amount.currency_code,
-      status: details.status,
-      paypalDetails: details
-    };
-    
-    // Store payment details for registration
-    localStorage.setItem('paymentDetails', JSON.stringify(paymentDetails));
-    
-    setCompleted(true);
-    
-    // After successful payment, navigate to registration
-    setTimeout(() => {
-      navigate('/register');
-    }, 2000);
+    try {
+      // Get registration data from localStorage
+      const registrationData = localStorage.getItem('registrationData');
+      if (!registrationData) {
+        throw new Error('Registration data not found. Please start registration again.');
+      }
+      
+      const regData = JSON.parse(registrationData);
+      
+      // Prepare complete registration with payment data
+      const completeRegistrationData = {
+        ...regData,
+        payment_id: details.id,
+        plan_name: selectedPlan?.name || 'Starter',
+        payment_status: details.status || 'COMPLETED',
+        payment_amount: details.purchase_units?.[0]?.amount?.value || '0.00',
+        payment_currency: details.purchase_units?.[0]?.amount?.currency_code || 'USD'
+      };
+      
+      console.log('Completing registration with payment:', completeRegistrationData);
+      
+      // Call Django backend to complete registration
+      const response = await authApi.registerWithBusiness(completeRegistrationData);
+      
+      if (response.data?.success && response.data?.data?.tokens?.token) {
+        // Store auth token
+        localStorage.setItem('token', response.data.data.tokens.token);
+        
+        console.log('✅ Registration completed successfully!');
+        console.log('User:', response.data.data.user);
+        console.log('Business:', response.data.data.business);
+        console.log('Subscription:', response.data.data.subscription);
+        
+        // Store user and business info
+        if (response.data.data.user) {
+          localStorage.setItem('user', JSON.stringify(response.data.data.user));
+        }
+        if (response.data.data.business) {
+          localStorage.setItem('businessInfo', JSON.stringify(response.data.data.business));
+        }
+        
+        // Clean up registration data
+        localStorage.removeItem('registrationData');
+        localStorage.removeItem('selectedPlan');
+        
+        setCompleted(true);
+        
+        // Navigate to dashboard
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1500);
+        
+      } else {
+        throw new Error(response.data?.message || 'Registration failed after payment');
+      }
+      
+    } catch (error: any) {
+      console.error('❌ Failed to complete registration:', error);
+      setPaymentError(
+        error.response?.data?.message || 
+        error.message || 
+        'Failed to complete registration. Please contact support.'
+      );
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handlePayPalError = (error: any) => {
@@ -103,12 +165,20 @@ const PaymentPage: React.FC = () => {
     
     if (error?.message) {
       errorMessage = error.message;
+      // Check for React 19 compatibility issues
+      if (error.message.includes('useReducer') || 
+          error.message.includes('Invalid hook call') ||
+          error.message.includes('Cannot read properties of null')) {
+        errorMessage = 'PayPal integration is temporarily unavailable due to a compatibility issue. Please use the "Skip Payment" option or contact support.';
+      }
     } else if (error?.name === 'INSTRUMENT_DECLINED') {
       errorMessage = 'Your payment method was declined. Please try a different payment method.';
     } else if (error?.name === 'PAYER_ACTION_REQUIRED') {
       errorMessage = 'Please complete the payment process in the PayPal window.';
     } else if (error?.name === 'VALIDATION_ERROR') {
       errorMessage = 'Invalid payment information. Please check your details and try again.';
+    } else if (error?.name === 'NETWORK_ERROR') {
+      errorMessage = 'Network error occurred. Please check your internet connection and try again.';
     }
     
     setPaymentError(errorMessage);
@@ -136,9 +206,9 @@ const PaymentPage: React.FC = () => {
       setProcessing(false);
       setCompleted(true);
       
-      // After successful payment, navigate to registration
+      // After successful payment, navigate to dashboard
       setTimeout(() => {
-        navigate('/register');
+        navigate('/dashboard');
       }, 2000);
     }, 3000);
   };
@@ -241,10 +311,20 @@ const PaymentPageContent: React.FC<PaymentPageContentProps> = ({
             </Box>
             <Button 
               startIcon={<ArrowBack />}
-              onClick={() => navigate('/pricing')}
+              onClick={() => {
+                // Check if user came from registration (has business info)
+                const businessInfo = localStorage.getItem('businessInfo');
+                if (businessInfo) {
+                  // User came from registration, go back to registration
+                  navigate('/register');
+                } else {
+                  // User came directly, go back to pricing
+                  navigate('/pricing');
+                }
+              }}
               sx={{ color: theme.palette.primary.main }}
             >
-              Back to Pricing
+              Back
             </Button>
           </Box>
         </Container>
@@ -270,6 +350,14 @@ const PaymentPageContent: React.FC<PaymentPageContentProps> = ({
             </Typography>
           </Alert>
         )}
+        
+        {/* Payment Options Info */}
+        <Alert severity="success" sx={{ mb: 3 }}>
+          <Typography variant="body2">
+            <strong>Flexible Payment Options:</strong> You can complete your registration now and set up payment later from your dashboard. 
+            No credit card required to get started!
+          </Typography>
+        </Alert>
 
         {!completed ? (
           <Box sx={{ 
@@ -356,42 +444,13 @@ const PaymentPageContent: React.FC<PaymentPageContentProps> = ({
 
                   {!processing ? (
                     <Box sx={{ mb: 2 }}>
-                      {/* PayPal Payment */}
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center' }}>
-                          {useRealPayPal ? 'Pay with PayPal (Real Payment) - Secure Checkout' : 'PayPal Demo Mode'}
-                        </Typography>
-                        <PayPalWrapper
-                          selectedPlan={selectedPlan}
-                          onSuccess={handlePayPalSuccess}
-                          onError={handlePayPalError}
-                          onProcessing={setProcessing}
-                          convertToUSD={convertToUSD}
-                        />
-                      </Box>
-
-
-
-                      {/* Credit Card Payment Button */}
-                      <Button 
-                        variant="outlined" 
-                        size="large"
-                        fullWidth
-                        onClick={handleCreditCardPayment}
-                        startIcon={<CreditCard />}
-                        sx={{ 
-                          py: 1.5,
-                          fontSize: '1.1rem',
-                          borderColor: theme.palette.primary.main,
-                          color: theme.palette.primary.main,
-                          '&:hover': {
-                            borderColor: theme.palette.primary.dark,
-                            backgroundColor: theme.palette.primary.light + '10'
-                          }
-                        }}
-                      >
-                        Pay with Credit Card
-                      </Button>
+                      {/* Payment Processing - React 19 Compatible */}
+                      <PaymentBypass
+                        selectedPlan={selectedPlan}
+                        onSuccess={handlePayPalSuccess}
+                        onError={handlePayPalError}
+                        userEmail="customer@example.com"
+                      />
                     </Box>
                   ) : (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, py: 4 }}>

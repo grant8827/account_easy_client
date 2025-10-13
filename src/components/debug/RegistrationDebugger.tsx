@@ -50,7 +50,7 @@ const RegistrationDebugger: React.FC = () => {
       // Direct axios call to bypass any interceptors initially
       addLog('🌐 Making direct axios call...');
       const response = await axios.post(
-        'http://localhost:8000/api/auth/register/',
+        'http://localhost:8002/api/auth/register/',
         testData,
         {
           headers: {
