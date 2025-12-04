@@ -6,22 +6,17 @@ import {
   DialogActions,
   Button,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Box,
   Typography,
   Alert,
   CircularProgress
 } from '@mui/material';
 import api from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
 
 interface Business {
-  _id: string;
-  name: string;
-  registrationNumber: string;
+  id: number;
+  business_name: string;
+  registration_number: string;
 }
 
 interface EmployeeFormProps {
@@ -32,14 +27,13 @@ interface EmployeeFormProps {
 }
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({ open, onClose, onSubmit, employee }) => {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [loadingBusinesses, setLoadingBusinesses] = useState(false);
+  const [userBusiness, setUserBusiness] = useState<Business | null>(null);
+  const [loadingBusiness, setLoadingBusiness] = useState(false);
   
   const [formData, setFormData] = useState({
-    businessId: employee?.business?._id || user?.selectedBusiness || '',
+    businessId: employee?.business?._id || '',
     employeeId: employee?.employeeId || '',
     firstName: employee?.firstName || '',
     lastName: employee?.lastName || '',
@@ -55,19 +49,54 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ open, onClose, onSubmit, em
 
   useEffect(() => {
     if (open) {
-      fetchBusinesses();
+      fetchUserBusiness();
     }
   }, [open]);
 
-  const fetchBusinesses = async () => {
+  const fetchUserBusiness = async () => {
     try {
-      setLoadingBusinesses(true);
-      const response = await api.get('/businesses');
-      setBusinesses(response.data.businesses || []);
+      setLoadingBusiness(true);
+      setError(null);
+      
+      console.log('🔍 Fetching user business...');
+      const response = await api.get('/businesses/');
+      console.log('✅ Business API response:', response);
+      console.log('📊 Business data:', response.data);
+      
+      const businesses = response.data || [];
+      console.log('📋 Businesses array:', businesses, 'Length:', businesses.length);
+      
+      if (businesses.length > 0) {
+        const business = businesses[0]; // Since we enforce one business per account
+        console.log('🏢 Selected business:', business);
+        
+        setUserBusiness(business);
+        // Use 'id' field instead of '_id' since this is Django backend
+        const businessId = business.id || business._id;
+        setFormData(prev => ({
+          ...prev,
+          businessId: businessId
+        }));
+        console.log('✅ Business loaded successfully:', businessId);
+      } else {
+        console.log('❌ No businesses found in response');
+        setError('No business found. Please create a business first.');
+      }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch businesses');
+      console.error('❌ Error fetching business:', err);
+      console.error('Response:', err.response);
+      console.error('Response data:', err.response?.data);
+      console.error('Status:', err.response?.status);
+      
+      if (err.response?.status === 401) {
+        setError('Authentication required. Please log in again.');
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('Failed to fetch business information. Please check your connection and try again.');
+      }
     } finally {
-      setLoadingBusinesses(false);
+      setLoadingBusiness(false);
     }
   };
 
@@ -84,7 +113,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ open, onClose, onSubmit, em
       setError(null);
 
       if (!formData.businessId) {
-        setError('Please select a business');
+        setError('Business information is required. Please wait for business data to load or ensure you have a registered business.');
         return;
       }
       if (!formData.firstName || !formData.lastName || !formData.email || !formData.position || !formData.trn || !formData.nis) {
@@ -105,41 +134,48 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ open, onClose, onSubmit, em
         return;
       }
 
-      // Create the employee data with user information
+      // Create the employee data matching Django backend expectations
+      // Include user data for backend to create user automatically
       const employeeData = {
-        userData: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
+        // User information for automatic user creation
+        user_data: {
+          first_name: formData.firstName,
+          last_name: formData.lastName,
           email: formData.email,
           phone: formData.phone,
           role: 'employee',
           password: 'TempPass123!' // Temporary password - should be changed on first login
         },
-        business: formData.businessId,
-        employeeId: formData.employeeId.trim() || undefined, // Include if provided, otherwise let it auto-generate
-        personalInfo: {
-          dateOfBirth: new Date(formData.dateOfBirth),
-        },
-        employment: {
-          position: formData.position,
-          department: formData.department || 'General',
-          startDate: new Date(),
-          employmentType: 'full_time'
-        },
-        compensation: {
-          baseSalary: {
-            amount: Math.max(0, formData.basicSalary || 0), // Ensure non-negative value
-            currency: 'JMD',
-            frequency: 'monthly'
-          }
-        },
-        taxInfo: {
-          trn: cleanTrn,
-          nis: cleanNis
-        }
+        
+        // Employee information
+        date_of_birth: formData.dateOfBirth,
+        position: formData.position,
+        department: formData.department || 'General',
+        start_date: new Date().toISOString().split('T')[0], // Format as YYYY-MM-DD
+        employment_type: 'full_time',
+        
+        // Compensation
+        base_salary_amount: Math.max(0, formData.basicSalary || 0),
+        salary_currency: 'JMD',
+        salary_frequency: 'monthly',
+        
+        // Tax Information
+        trn: cleanTrn,
+        nis: cleanNis,
+        
+        // Work schedule defaults
+        hours_per_week: 40,
+        work_days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+        
+        // Leave entitlements (defaults)
+        vacation_days_entitlement: 14,
+        sick_days_entitlement: 10,
+        
+        // Auto-generate employee ID if not provided
+        ...(formData.employeeId.trim() && { employee_id: formData.employeeId.trim() })
       };
 
-      const endpoint = employee ? `/employees/${employee._id}` : '/employees';
+      const endpoint = employee ? `/employees/${formData.businessId}/${employee.id}` : `/employees/${formData.businessId}/`;
       const method = employee ? 'put' : 'post';
 
       await api[method](endpoint, employeeData);
@@ -184,33 +220,32 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ open, onClose, onSubmit, em
         )}
 
         <Box sx={{ display: 'grid', gap: 3, mt: 2 }}>
-          <FormControl fullWidth required>
-            <InputLabel>Select Business *</InputLabel>
-            <Select
-              value={formData.businessId}
-              label="Select Business *"
-              onChange={(e) => handleInputChange('businessId', e.target.value)}
-              disabled={loadingBusinesses}
-            >
-              {loadingBusinesses ? (
-                <MenuItem disabled>
-                  <CircularProgress size={20} sx={{ mr: 1 }} />
-                  Loading businesses...
-                </MenuItem>
-              ) : (
-                businesses.map((business) => (
-                  <MenuItem key={business._id} value={business._id}>
-                    {business.name} ({business.registrationNumber})
-                  </MenuItem>
-                ))
-              )}
-            </Select>
-            {businesses.length === 0 && !loadingBusinesses && (
-              <Typography variant="caption" color="error" sx={{ mt: 1 }}>
-                No businesses found. Please create a business first.
+          {/* Business Information Display */}
+          <Box sx={{ 
+            p: 2, 
+            bgcolor: 'grey.50', 
+            borderRadius: 1, 
+            border: '1px solid',
+            borderColor: 'grey.300'
+          }}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              Business Information
+            </Typography>
+            {loadingBusiness ? (
+              <Box display="flex" alignItems="center">
+                <CircularProgress size={16} sx={{ mr: 1 }} />
+                <Typography variant="body2">Loading business information...</Typography>
+              </Box>
+            ) : userBusiness ? (
+              <Typography variant="body2">
+                <strong>{userBusiness.business_name}</strong> ({userBusiness.registration_number})
+              </Typography>
+            ) : (
+              <Typography variant="body2" color="error">
+                No business found. Please create a business first.
               </Typography>
             )}
-          </FormControl>
+          </Box>
 
           <TextField
             label="Employee ID"

@@ -124,7 +124,7 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
       role: 'Small Business Owner',
       company: 'Campbell\'s Catering',
       rating: 5,
-      comment: 'AccountEezy transformed how I manage my catering business. The payroll system handles all the tax calculations automatically, saving me hours each week.',
+      comment: 'Accountseezy completely transformed how I manage my catering business. The automated payroll system and tax calculations save me 10+ hours every week!',
       avatar: '/api/placeholder/60/60'
     },
     {
@@ -132,7 +132,7 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
       role: 'Financial Manager',
       company: 'Brown & Associates',
       rating: 5,
-      comment: 'The compliance features are outstanding. We never miss a tax deadline and the GCT calculations are always accurate. Best investment we\'ve made.',
+      comment: 'The compliance features in Accountseezy are game-changing. We never miss tax deadlines and GCT calculations are always perfect. Best business investment ever!',
       avatar: '/api/placeholder/60/60'
     },
     {
@@ -140,39 +140,39 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
       role: 'Restaurant Owner',
       company: 'Spice Garden Restaurant',
       rating: 5,
-      comment: 'Managing 25 employees was a nightmare before AccountEezy. Now payroll takes minutes instead of hours, and everything is compliant.',
+      comment: 'Managing 25 employees used to be a nightmare. With Accountseezy, payroll processing takes just minutes and everything stays compliant automatically.',
       avatar: '/api/placeholder/60/60'
     }
   ];
 
   const faqs = [
     {
-      question: 'Is AccountEezy compliant with Jamaica tax laws?',
-      answer: 'Yes, AccountEezy is fully compliant with all Jamaica tax regulations including GCT, PAYE, NIS contributions, and other statutory requirements. Our system is regularly updated to reflect any changes in tax laws.'
+      question: 'Is Accountseezy compliant with Jamaica tax laws?',
+      answer: 'Absolutely! Accountseezy is fully compliant with all Jamaica tax regulations including GCT, PAYE, NIS contributions, and statutory requirements. Our system automatically updates with any tax law changes.'
     },
     {
       question: 'Can I manage multiple businesses?',
-      answer: 'Absolutely! AccountEezy allows you to manage unlimited businesses from a single dashboard. Each business has its own separate books while giving you consolidated reporting across all ventures.'
+      answer: 'Yes! Accountseezy supports unlimited business management from one unified dashboard. Each business maintains separate books while providing consolidated reporting across all your ventures.'
     },
     {
       question: 'What kind of support do you provide?',
-      answer: 'We offer 24/7 customer support via phone, email, and live chat. Our support team is based in Jamaica and understands local business requirements. We also provide free onboarding and training.'
+      answer: 'We provide 24/7 world-class customer support via phone, email, and live chat. Our Jamaica-based support team understands local business needs and offers free onboarding and training.'
     },
     {
       question: 'How secure is my data?',
-      answer: 'Your data security is our top priority. We use bank-level 256-bit encryption, secure servers, regular backups, and multi-factor authentication. All data is stored in compliance with international security standards.'
+      answer: 'Data security is paramount at Accountseezy. We employ bank-level 256-bit encryption, secure cloud servers, automatic backups, and multi-factor authentication. All data complies with international security standards.'
     },
     {
-      question: 'Can I try AccountEezy before committing?',
-      answer: 'Yes! We offer a 30-day free trial with full access to all features. No credit card required. You can also schedule a free demo with our team to see how AccountEezy can benefit your business.'
+      question: 'Can I try Accountseezy before committing?',
+      answer: 'Definitely! We offer a comprehensive 30-day free trial with full feature access—no credit card required. Schedule a personalized demo to see how Accountseezy can transform your business.'
     }
   ];
 
   const stats = [
-    { label: 'Active Businesses', value: 1250, suffix: '+' },
-    { label: 'Transactions Processed', value: 500000, suffix: '+' },
-    { label: 'Tax Returns Filed', value: 8500, suffix: '+' },
-    { label: 'Customer Satisfaction', value: 98, suffix: '%' }
+    { label: 'Active Businesses', value: 2500, suffix: '+' },
+    { label: 'Transactions Processed', value: 1200000, suffix: '+' },
+    { label: 'Tax Returns Filed', value: 15000, suffix: '+' },
+    { label: 'Customer Satisfaction', value: 99, suffix: '%' }
   ];
 
   return (
@@ -185,27 +185,49 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
           py: { xs: 8, md: 12 },
           position: 'relative',
           overflow: 'hidden',
-          minHeight: '80vh',
+          minHeight: '85vh',
           display: 'flex',
-          alignItems: 'center'
+          alignItems: 'center',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'radial-gradient(circle at 30% 40%, rgba(16, 185, 129, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.3) 0%, transparent 50%)',
+            zIndex: 1
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="1"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+            zIndex: 1
+          }
         }}
       >
-        <Container maxWidth="lg">
+        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
           <Fade in timeout={1000}>
             <Box sx={{ 
               display: 'grid', 
               gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
-              gap: 4, 
+              gap: 6, 
               alignItems: 'center' 
             }}>
               <Box>
                 <Chip 
-                  label="🚀 Now serving 1,250+ businesses across Jamaica" 
+                  label="🚀 Trusted by 2,500+ businesses across Jamaica" 
                   sx={{ 
                     mb: 3, 
-                    backgroundColor: alpha('#fac83e', 0.2),
-                    color: '#fac83e',
-                    fontWeight: 'bold'
+                    backgroundColor: alpha('#C7AE6A', 0.15),
+                    color: '#C7AE6A',
+                    fontWeight: 'bold',
+                    fontSize: '0.9rem',
+                    border: '1px solid rgba(199, 174, 106, 0.3)'
                   }} 
                 />
                 <Typography 
@@ -213,85 +235,103 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
                   component="h1" 
                   gutterBottom
                   sx={{ 
-                    fontWeight: 'bold',
+                    fontWeight: 800,
                     fontSize: { xs: '2.5rem', md: '4rem' },
-                    color: '#fac83e',
+                    background: 'linear-gradient(135deg, #C7AE6A 0%, #b99a45 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
                     lineHeight: 1.1,
                     mb: 3
                   }}
                 >
-                  Transform Your Business
+                  Accountseezy
                   <br />
-                  <span style={{ color: 'white' }}>with Smart Finance</span>
+                  <span style={{ 
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}>
+                    Smart Business Finance
+                  </span>
                 </Typography>
                 <Typography 
                   variant="h5" 
                   component="p" 
                   paragraph
                   sx={{ 
-                    opacity: 0.9,
+                    opacity: 0.95,
                     mb: 4,
                     fontSize: { xs: '1.1rem', md: '1.35rem' },
-                    lineHeight: 1.4
+                    lineHeight: 1.5,
+                    color: '#f1f5f9',
+                    fontWeight: 400
                   }}
                 >
-                  The complete financial management solution built specifically for Jamaica businesses. 
-                  Automate payroll, ensure tax compliance, and gain real-time insights into your business performance.
+                  The most intuitive financial management platform designed for modern Jamaica businesses. 
+                  Streamline payroll, master tax compliance, and unlock powerful business insights—all in one place.
                 </Typography>
                 
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, gap: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, gap: 3, flexWrap: 'wrap' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CheckCircle sx={{ color: '#fac83e', fontSize: 20 }} />
-                    <Typography>Simplify Work</Typography>
+                    <CheckCircle sx={{ color: '#C7AE6A', fontSize: 20 }} />
+                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 500 }}>Automate Everything</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CheckCircle sx={{ color: '#fac83e', fontSize: 20 }} />
-                    <Typography>Amplify Growth</Typography>
+                    <CheckCircle sx={{ color: '#C7AE6A', fontSize: 20 }} />
+                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 500 }}>Scale Faster</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CheckCircle sx={{ color: '#fac83e', fontSize: 20 }} />
-                    <Typography>24/7 Availability</Typography>
+                    <CheckCircle sx={{ color: '#C7AE6A', fontSize: 20 }} />
+                    <Typography sx={{ fontSize: '0.95rem', fontWeight: 500 }}>Stay Compliant</Typography>
                   </Box>
                 </Box>
 
-                <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
                   <Button 
                     variant="contained" 
                     size="large"
                     onClick={() => navigate('/pricing')}
                     endIcon={<ArrowForward />}
                     sx={{ 
-                      backgroundColor: '#fac83e',
-                      color: theme.palette.primary.main,
+                      background: 'linear-gradient(135deg, #C7AE6A 0%, #b99a45 100%)',
+                      color: 'white',
                       '&:hover': {
-                        backgroundColor: alpha('#fac83e', 0.9),
-                        transform: 'translateY(-2px)'
+                        background: 'linear-gradient(135deg, #b99a45 0%, #d5c28f 100%)',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 8px 25px rgba(199, 174, 106, 0.35)'
                       },
-                      py: 2,
-                      px: 4,
+                      py: 2.5,
+                      px: 5,
                       fontSize: '1.1rem',
-                      fontWeight: 'bold',
-                      transition: 'all 0.3s ease'
+                      fontWeight: 700,
+                      borderRadius: 3,
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                     }}
                   >
-                    Get Started
+                    Start Free Trial
                   </Button>
                   <Button 
                     variant="outlined" 
                     size="large"
                     startIcon={<PlayArrow />}
                     sx={{ 
-                      borderColor: '#ffffff',
-                      color: '#fac83e',
+                      borderColor: 'rgba(255, 255, 255, 0.5)',
+                      color: '#ffffff',
+                      borderWidth: 2,
                       '&:hover': {
-                        borderColor: '#fac83e',
-                        backgroundColor: alpha('#ffffff', 0.1),
-                        transform: 'translateY(-2px)'
+                        borderColor: '#C7AE6A',
+                        backgroundColor: alpha('#C7AE6A', 0.1),
+                        transform: 'translateY(-2px)',
+                        color: '#C7AE6A'
                       },
-                      py: 2,
-                      px: 4,
+                      py: 2.5,
+                      px: 5,
                       fontSize: '1.1rem',
-                      transition: 'all 0.3s ease'
+                      fontWeight: 600,
+                      borderRadius: 3,
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                     }}
                   >
                     Watch Demo
@@ -304,44 +344,105 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
-                    height: { xs: 250, md: 400 }
+                    height: { xs: 300, md: 450 },
+                    position: 'relative'
                   }}
                 >
+                  {/* Main Dashboard Card */}
                   <Box
                     sx={{
-                      width: { xs: 200, md: 300 },
-                      height: { xs: 200, md: 300 },
-                      backgroundColor: alpha('#ffffff', 0.1),
-                      borderRadius: '20px',
+                      width: { xs: 240, md: 350 },
+                      height: { xs: 240, md: 350 },
+                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%)',
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: 4,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      border: '3px solid rgba(255,255,255,0.3)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
                       position: 'relative',
+                      transform: 'rotateY(-5deg) rotateX(5deg)',
+                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
                       '&::before': {
                         content: '""',
                         position: 'absolute',
-                        top: -20,
-                        right: -20,
-                        width: 40,
-                        height: 40,
-                        backgroundColor: '#fac83e',
+                        top: -10,
+                        right: -10,
+                        width: 60,
+                        height: 60,
+                        background: 'linear-gradient(135deg, #C7AE6A 0%, #b99a45 100%)',
                         borderRadius: '50%',
-                        opacity: 0.8
+                        opacity: 0.9,
+                        animation: 'pulse 2s infinite'
                       },
                       '&::after': {
                         content: '""',
                         position: 'absolute',
                         bottom: -15,
                         left: -15,
-                        width: 30,
-                        height: 30,
-                        backgroundColor: alpha('#ffffff', 0.3),
-                        borderRadius: '50%'
+                        width: 40,
+                        height: 40,
+                        background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%)',
+                        borderRadius: '50%',
+                        opacity: 0.8
+                      },
+                      '@keyframes pulse': {
+                        '0%': { transform: 'scale(1)' },
+                        '50%': { transform: 'scale(1.1)' },
+                        '100%': { transform: 'scale(1)' }
                       }
                     }}
                   >
-                    <Dashboard sx={{ fontSize: { xs: 80, md: 120 }, color: '#fac83e' }} />
+                    <Dashboard sx={{ 
+                      fontSize: { xs: 100, md: 140 }, 
+                      background: 'linear-gradient(135deg, #C7AE6A 0%, #d5c28f 100%)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent'
+                    }} />
+                  </Box>
+                  
+                  {/* Floating Elements */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 20,
+                      left: 20,
+                      width: 60,
+                      height: 60,
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 8px 20px rgba(16, 185, 129, 0.3)',
+                      animation: 'float 3s ease-in-out infinite'
+                    }}
+                  >
+                    <MonetizationOn sx={{ color: 'white', fontSize: 30 }} />
+                  </Box>
+                  
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      bottom: 30,
+                      right: 10,
+                      width: 50,
+                      height: 50,
+                      background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 100%)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 6px 16px rgba(0, 0, 0, 0.3)',
+                      animation: 'float 3s ease-in-out infinite 1s',
+                      '@keyframes float': {
+                        '0%, 100%': { transform: 'translateY(0px)' },
+                        '50%': { transform: 'translateY(-10px)' }
+                      }
+                    }}
+                  >
+                    <People sx={{ color: 'white', fontSize: 25 }} />
                   </Box>
                 </Box>
               </Box>
@@ -460,7 +561,7 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
             alignItems: 'center'
           }}>
             <Box>
-              <Typography variant="h3" component="h2" gutterBottom sx={{ fontWeight: 'bold', color: '#fac83e' }}>
+              <Typography variant="h3" component="h2" gutterBottom sx={{ fontWeight: 'bold', color: '#C7AE6A' }}>
                 Built for Jamaica Businesses
               </Typography>
               <Typography variant="h6" paragraph sx={{ opacity: 0.9, mb: 4 }}>
@@ -477,11 +578,11 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
                 ].map((item, index) => (
                   <Box key={index} sx={{ display: 'flex', alignItems: 'flex-start', mb: 3 }}>
                     <Box sx={{ 
-                      backgroundColor: alpha('#fac83e', 0.2), 
+                      backgroundColor: alpha('#C7AE6A', 0.2), 
                       borderRadius: '50%', 
                       p: 1, 
                       mr: 3,
-                      color: '#fac83e'
+                      color: '#C7AE6A'
                     }}>
                       {item.icon}
                     </Box>
@@ -525,10 +626,12 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
                   size="large"
                   onClick={() => navigate('/pricing')}
                   sx={{ 
-                    backgroundColor: '#fac83e',
-                    color: theme.palette.primary.main,
+                    background: 'linear-gradient(135deg, #C7AE6A 0%, #b99a45 100%)',
+                    color: 'white',
                     '&:hover': {
-                      backgroundColor: alpha('#fac83e', 0.9)
+                      background: 'linear-gradient(135deg, #b99a45 0%, #d5c28f 100%)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 8px 25px rgba(199, 174, 106, 0.35)'
                     }
                   }}
                 >
@@ -558,7 +661,7 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
           paragraph
           sx={{ mb: 6 }}
         >
-          Don't just take our word for it - hear from real businesses using AccountEezy
+          Don't just take our word for it - hear from real businesses using Accountseezy
         </Typography>
         
         <Box sx={{ 
@@ -619,7 +722,7 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
             paragraph
             sx={{ mb: 6 }}
           >
-            Everything you need to know about AccountEezy
+            Everything you need to know about Accountseezy
           </Typography>
 
           {faqs.map((faq, index) => (
@@ -651,7 +754,7 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
               variant="h3" 
               component="h2" 
               gutterBottom
-              sx={{ fontWeight: 'bold', mb: 2, color: '#fac83e' }}
+              sx={{ fontWeight: 'bold', mb: 2, color: '#C7AE6A' }}
             >
               Ready to Transform Your Business?
             </Typography>
@@ -660,25 +763,25 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
               paragraph
               sx={{ mb: 4, opacity: 0.9 }}
             >
-              Join over 1,250 businesses already using AccountEezy to streamline their operations,
-              ensure compliance, and drive growth.
+              Join over 2,500 businesses already using Accountseezy to streamline operations,
+              ensure compliance, and accelerate growth.
             </Typography>
             
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mb: 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mb: 4, flexWrap: 'wrap' }}>
               <Box sx={{ textAlign: 'center' }}>
-                <Schedule sx={{ fontSize: 40, color: '#fac83e', mb: 1 }} />
-                <Typography variant="h6">30-Day Free Trial</Typography>
+                <Schedule sx={{ fontSize: 40, color: '#C7AE6A', mb: 1 }} />
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>30-Day Free Trial</Typography>
                 <Typography variant="body2" sx={{ opacity: 0.8 }}>No credit card required</Typography>
               </Box>
               <Box sx={{ textAlign: 'center' }}>
-                <Support sx={{ fontSize: 40, color: '#fac83e', mb: 1 }} />
-                <Typography variant="h6">Expert Support</Typography>
-                <Typography variant="body2" sx={{ opacity: 0.8 }}>24/7 local support team</Typography>
+                <Support sx={{ fontSize: 40, color: '#C7AE6A', mb: 1 }} />
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>Expert Support</Typography>
+                <Typography variant="body2" sx={{ opacity: 0.8 }}>24/7 Jamaica-based team</Typography>
               </Box>
               <Box sx={{ textAlign: 'center' }}>
-                <Lock sx={{ fontSize: 40, color: '#fac83e', mb: 1 }} />
-                <Typography variant="h6">Bank-Level Security</Typography>
-                <Typography variant="body2" sx={{ opacity: 0.8 }}>Your data is safe with us</Typography>
+                <Lock sx={{ fontSize: 40, color: '#C7AE6A', mb: 1 }} />
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>Bank-Level Security</Typography>
+                <Typography variant="body2" sx={{ opacity: 0.8 }}>Enterprise-grade protection</Typography>
               </Box>
             </Box>
 
@@ -688,24 +791,26 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
               onClick={() => navigate('/pricing')}
               endIcon={<ArrowForward />}
               sx={{ 
-                py: 2,
+                py: 2.5,
                 px: 6,
                 fontSize: '1.2rem',
-                fontWeight: 'bold',
-                backgroundColor: '#fac83e',
-                color: theme.palette.primary.main,
+                fontWeight: 700,
+                background: 'linear-gradient(135deg, #C7AE6A 0%, #b99a45 100%)',
+                color: 'white',
+                borderRadius: 3,
                 '&:hover': {
-                  backgroundColor: alpha('#fac83e', 0.9),
-                  transform: 'translateY(-2px)'
+                  background: 'linear-gradient(135deg, #b99a45 0%, #d5c28f 100%)',
+                  transform: 'translateY(-3px)',
+                  boxShadow: '0 12px 30px rgba(199, 174, 106, 0.4)'
                 },
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
             >
-              Get Started Today
+              Start Free Trial Today
             </Button>
             
             <Typography variant="body2" sx={{ mt: 2, opacity: 0.8 }}>
-              Questions? <Button sx={{ color: '#fac83e', textDecoration: 'underline' }}>Contact our team</Button>
+              Questions? <Button sx={{ color: '#C7AE6A', textDecoration: 'underline', fontWeight: 500 }}>Contact our team</Button>
             </Typography>
           </Box>
         </Container>

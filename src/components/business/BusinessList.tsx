@@ -16,7 +16,6 @@ import {
   DialogActions,
   Alert,
   CircularProgress,
-  Fab,
   Tooltip
 } from '@mui/material';
 import {
@@ -24,7 +23,6 @@ import {
   MoreVert,
   Edit,
   Delete,
-  Add,
   LocationOn,
   Phone,
   Email,
@@ -35,31 +33,26 @@ import BusinessForm from './BusinessForm';
 import { useAuth } from '../../context/AuthContext';
 
 interface Business {
-  _id: string;
-  name: string;
-  registrationNumber: string;
+  id: number;
+  business_name: string;
+  registration_number: string;
   trn: string;
   nis?: string;
-  businessType: string;
+  business_type: string;
   industry: string;
-  isActive?: boolean; // Backend uses isActive instead of status
-  subscriptionStatus?: string;
-  subscriptionPlan?: string;
-  address?: {
-    street: string;
-    city: string;
-    parish: string;
-    postalCode: string;
-    country: string;
-  };
-  contactInfo?: {
-    phone: string;
-    email: string;
-    website?: string;
-  };
-  description?: string;
-  createdAt: string;
-  updatedAt: string;
+  is_active?: boolean;
+  subscription_status?: string;
+  subscription_plan?: string;
+  street: string;
+  city: string;
+  parish: string;
+  postal_code?: string;
+  country: string;
+  phone: string;
+  email: string;
+  website?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const BusinessList: React.FC = () => {
@@ -81,11 +74,16 @@ const BusinessList: React.FC = () => {
   const fetchBusinesses = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/businesses');
-      setBusinesses(response.data.businesses || []);
+      console.log('Fetching businesses...');
+      const response = await api.get('/businesses/');
+      console.log('Business API response:', response.data);
+      const businessesData = response.data.data || response.data || [];
+      console.log('Businesses found:', businessesData.length);
+      setBusinesses(businessesData);
       setError(null);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch businesses');
+      console.error('Error fetching businesses:', err);
+      setError(err.response?.data?.message || `Failed to fetch businesses: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -111,10 +109,10 @@ const BusinessList: React.FC = () => {
 
     setDeleting(true);
     try {
-      await api.delete(`/api/businesses/${selectedBusiness._id}`);
+      await api.delete(`/api/businesses/${selectedBusiness.id}`);
       
       // Remove the deleted business from the state
-      setBusinesses(prev => prev.filter(b => b._id !== selectedBusiness._id));
+      setBusinesses(prev => prev.filter(b => b.id !== selectedBusiness.id));
       
       setDeleteDialogOpen(false);
       setSelectedBusiness(null);
@@ -126,10 +124,7 @@ const BusinessList: React.FC = () => {
     }
   };
 
-  const handleAddBusiness = () => {
-    setEditingBusiness(null);
-    setBusinessFormOpen(true);
-  };
+  // Removed handleAddBusiness - one business per account policy
 
   const handleEditBusiness = (business: Business) => {
     setEditingBusiness(business);
@@ -158,7 +153,7 @@ const BusinessList: React.FC = () => {
 
   const getBusinessStatus = (business: Business): string => {
     // Convert isActive boolean to status string
-    if (business.isActive === false) {
+    if (business.is_active === false) {
       return 'inactive';
     }
     return 'active'; // Default to active if isActive is true or undefined
@@ -175,23 +170,19 @@ const BusinessList: React.FC = () => {
   return (
     <Box m={3}>
       {/* Header */}
-      <Box display="flex" justifyContent="space-around" alignItems="center" mb={3}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box>
           <Typography variant="h4" gutterBottom>
-            My Businesses
+            Business Management
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Manage your registered businesses and their information
+            {businesses.length > 0 
+              ? 'View and manage your business information and settings'
+              : 'Your business information will appear here once you complete registration'
+            }
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<Add />}
-          onClick={handleAddBusiness}
-        >
-          Register Business
-        </Button>
+{/* One business per account - removed Add Another Business button */}
       </Box>
 
       {error && (
@@ -206,13 +197,20 @@ const BusinessList: React.FC = () => {
           <CardContent>
             <BusinessIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" gutterBottom>
-              No Businesses Found
+              No Business Information Available
             </Typography>
             <Typography variant="body2" color="text.secondary" mb={3}>
-              Start by registering your first business to get started with AccountEezy.
+              Your business information will appear here once you complete your account registration process. 
+              Business details are created during the initial account signup.
             </Typography>
-            <Button variant="contained" startIcon={<Add />} onClick={handleAddBusiness}>
-              Register Business
+            <Typography variant="body2" color="text.secondary" mb={3}>
+              Each account can have one business. If you need to register a business, please complete the registration process or contact support.
+            </Typography>
+            <Button 
+              variant="contained" 
+              onClick={() => window.location.href = '/dashboard'}
+            >
+              Return to Dashboard
             </Button>
           </CardContent>
         </Card>
@@ -226,12 +224,12 @@ const BusinessList: React.FC = () => {
         >
           {businesses.map((business) => (
             <Card 
-              key={business._id}
+              key={business.id}
               sx={{ 
                 height: '100%',
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 position: 'relative',
-                border: user?.selectedBusiness === business._id ? '2px solid' : 'none',
+                border: user?.selectedBusiness === business.id.toString() ? '2px solid' : 'none',
                 borderColor: 'primary.main',
                 '&:hover': {
                   transform: 'translateY(-4px)',
@@ -248,7 +246,7 @@ const BusinessList: React.FC = () => {
                       </Avatar>
                       <Box>
                         <Typography variant="h6" component="div" noWrap>
-                          {business.name}
+                          {business.business_name}
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
                           <Chip 
@@ -256,12 +254,12 @@ const BusinessList: React.FC = () => {
                             size="small" 
                             color={getStatusColor(getBusinessStatus(business))}
                           />
-                          {business.subscriptionStatus && (
-                            <Tooltip title={`Subscription: ${business.subscriptionPlan || 'None'}`}>
+                          {business.subscription_status && (
+                            <Tooltip title={`Subscription: ${business.subscription_plan || 'None'}`}>
                               <Chip
-                                label={business.subscriptionStatus}
+                                label={business.subscription_status}
                                 size="small"
-                                color={business.subscriptionStatus === 'active' ? 'success' : 'warning'}
+                                color={business.subscription_status === 'active' ? 'success' : 'warning'}
                               />
                             </Tooltip>
                           )}
@@ -282,10 +280,10 @@ const BusinessList: React.FC = () => {
                       <strong>TRN:</strong> {business.trn}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      <strong>Registration:</strong> {business.registrationNumber}
+                      <strong>Registration:</strong> {business.registration_number}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      <strong>Type:</strong> {business.businessType}
+                      <strong>Type:</strong> {business.business_type}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
                       <strong>Industry:</strong> {business.industry}
@@ -297,52 +295,29 @@ const BusinessList: React.FC = () => {
                     <Box display="flex" alignItems="center" mb={1}>
                       <LocationOn fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary" noWrap>
-                        {business.address?.city ? `${business.address.city}${business.address.parish ? `, ${business.address.parish}` : ''}` : 'Address not provided'}
+                        {business.city ? `${business.city}${business.parish ? `, ${business.parish}` : ''}` : 'Address not provided'}
                       </Typography>
                     </Box>
                     <Box display="flex" alignItems="center" mb={1}>
                       <Phone fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary">
-                        {business.contactInfo?.phone || 'Phone not provided'}
+                        {business.phone || 'Phone not provided'}
                       </Typography>
                     </Box>
                     <Box display="flex" alignItems="center">
                       <Email fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
                       <Typography variant="body2" color="text.secondary" noWrap>
-                        {business.contactInfo?.email || 'Email not provided'}
+                        {business.email || 'Email not provided'}
                       </Typography>
                     </Box>
                   </Box>
-
-                  {/* Description */}
-                  {business.description && (
-                    <Box mt={2}>
-                      <Typography variant="body2" color="text.secondary">
-                        {business.description.length > 100 
-                          ? `${business.description.substring(0, 100)}...`
-                          : business.description
-                        }
-                      </Typography>
-                    </Box>
-                  )}
                 </CardContent>
               </Card>
             ))}
           </Box>
         )}
 
-      {/* Floating Action Button */}
-      <Fab
-        color="primary"
-        aria-label="add business"
-        sx={{
-          position: 'fixed',
-          bottom: 24,
-          right: 24,
-        }}
-      >
-        <Add />
-      </Fab>
+{/* One business per account - removed floating add button */}
 
       {/* Context Menu */}
       <Menu
@@ -353,12 +328,12 @@ const BusinessList: React.FC = () => {
         {selectedBusiness && (
           <MenuItem
             onClick={() => {
-              selectBusiness(selectedBusiness._id);
+              selectBusiness(selectedBusiness.id.toString());
               handleMenuClose();
             }}
           >
             <Check sx={{ mr: 1 }} />
-            {user?.selectedBusiness === selectedBusiness._id ? 'Selected' : 'Select Business'}
+            {user?.selectedBusiness === selectedBusiness.id.toString() ? 'Selected' : 'Select Business'}
           </MenuItem>
         )}
         <MenuItem onClick={() => {
@@ -384,7 +359,7 @@ const BusinessList: React.FC = () => {
         <DialogTitle>Delete Business</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete "{selectedBusiness?.name}"? This action cannot be undone.
+            Are you sure you want to delete "{selectedBusiness?.business_name}"? This action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>

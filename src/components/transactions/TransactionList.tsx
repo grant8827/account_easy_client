@@ -49,60 +49,30 @@ import api from '../../services/api';
 import TransactionForm from './TransactionForm';
 
 interface Transaction {
-  _id: string;
+  id: number;
   business: {
-    _id: string;
-    name: string;
+    id: number;
+    business_name: string;
   };
-  transactionNumber: string;
-  type: 'income' | 'expense' | 'asset_purchase' | 'asset_sale' | 'liability' | 'equity' | 'transfer' | 'adjustment';
+  transaction_number: string;
+  transaction_type: 'income' | 'expense' | 'asset_purchase' | 'asset_sale' | 'liability' | 'equity' | 'transfer' | 'adjustment';
   category: string;
   description: string;
   amount: number;
   currency: string;
-  date: string;
-  paymentMethod: string;
-  referenceNumber?: string;
-  attachments?: string[];
-  tax: {
-    isTaxable: boolean;
-    gct?: {
-      rate: number;
-      amount: number;
-    };
-    specialConsumptionTax?: {
-      rate: number;
-      amount: number;
-    };
-    customsDuty?: {
-      rate: number;
-      amount: number;
-    };
-  };
-  parties: {
-    from?: {
-      name: string;
-      type: 'customer' | 'supplier' | 'employee' | 'bank' | 'other';
-      contact?: string;
-    };
-    to?: {
-      name: string;
-      type: 'customer' | 'supplier' | 'employee' | 'bank' | 'other';
-      contact?: string;
-    };
-  };
-  status: 'pending' | 'completed' | 'cancelled' | 'reconciled';
-  reconciliation?: {
-    reconciledDate: string;
-    reconciledBy: string;
-    bankStatement: {
-      date: string;
-      reference: string;
-      amount: number;
-    };
-  };
-  createdAt: string;
-  updatedAt: string;
+  transaction_date: string;
+  payment_method: string;
+  reference?: string;
+  vendor_name?: string;
+  customer_name?: string;
+  is_taxable: boolean;
+  gct_rate: number;
+  gct_amount: number;
+  status: 'pending' | 'completed' | 'cancelled' | 'on_hold';
+  reconciled: boolean;
+  reconciled_date?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface TabPanelProps {
@@ -159,17 +129,17 @@ const TransactionList: React.FC = () => {
     // Search filter
     if (searchTerm) {
       filtered = filtered.filter(transaction =>
-        transaction.transactionNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.transaction_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
         transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         transaction.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.parties.from?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.parties.to?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        transaction.vendor_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.customer_name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Type filter
     if (typeFilter) {
-      filtered = filtered.filter(transaction => transaction.type === typeFilter);
+      filtered = filtered.filter(transaction => transaction.transaction_type === typeFilter);
     }
 
     // Status filter
@@ -182,7 +152,7 @@ const TransactionList: React.FC = () => {
       const now = new Date();
       const daysAgo = parseInt(dateFilter);
       const filterDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-      filtered = filtered.filter(transaction => new Date(transaction.date) >= filterDate);
+      filtered = filtered.filter(transaction => new Date(transaction.transaction_date) >= filterDate);
     }
 
     setFilteredTransactions(filtered);
@@ -191,8 +161,8 @@ const TransactionList: React.FC = () => {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/transactions');
-      setTransactions(response.data.transactions || []);
+      const response = await api.get('/transactions/all/');
+      setTransactions(response.data || []);
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch transactions');
@@ -221,8 +191,8 @@ const TransactionList: React.FC = () => {
 
     try {
       setDeleting(true);
-      await api.delete(`/transactions/${selectedTransaction._id}`);
-      setTransactions(transactions.filter(t => t._id !== selectedTransaction._id));
+      await api.delete(`/transactions/${selectedTransaction.business.id}/${selectedTransaction.id}/`);
+      setTransactions(transactions.filter(t => t.id !== selectedTransaction.id));
       setDeleteDialogOpen(false);
       setSelectedTransaction(null);
     } catch (err: any) {
@@ -294,11 +264,11 @@ const TransactionList: React.FC = () => {
 
   const calculateTotals = () => {
     const income = filteredTransactions
-      .filter(t => t.type === 'income')
+      .filter(t => t.transaction_type === 'income')
       .reduce((sum, t) => sum + t.amount, 0);
     
     const expenses = filteredTransactions
-      .filter(t => t.type === 'expense')
+      .filter(t => t.transaction_type === 'expense')
       .reduce((sum, t) => sum + t.amount, 0);
 
     return { income, expenses, net: income - expenses };
@@ -309,9 +279,9 @@ const TransactionList: React.FC = () => {
   const getTabTransactions = (tabIndex: number) => {
     switch (tabIndex) {
       case 0: return filteredTransactions; // All
-      case 1: return filteredTransactions.filter(t => t.type === 'income');
-      case 2: return filteredTransactions.filter(t => t.type === 'expense');
-      case 3: return filteredTransactions.filter(t => ['asset_purchase', 'asset_sale'].includes(t.type));
+      case 1: return filteredTransactions.filter(t => t.transaction_type === 'income');
+      case 2: return filteredTransactions.filter(t => t.transaction_type === 'expense');
+      case 3: return filteredTransactions.filter(t => ['asset_purchase', 'asset_sale'].includes(t.transaction_type));
       default: return filteredTransactions;
     }
   };
@@ -347,6 +317,7 @@ const TransactionList: React.FC = () => {
             variant="contained"
             startIcon={<Add />}
             size="large"
+            onClick={handleAddTransaction}
           >
             New Transaction
           </Button>
@@ -509,9 +480,9 @@ const TransactionList: React.FC = () => {
           textColor="primary"
         >
           <Tab label={`All (${filteredTransactions.length})`} />
-          <Tab label={`Income (${filteredTransactions.filter(t => t.type === 'income').length})`} />
-          <Tab label={`Expenses (${filteredTransactions.filter(t => t.type === 'expense').length})`} />
-          <Tab label={`Assets (${filteredTransactions.filter(t => ['asset_purchase', 'asset_sale'].includes(t.type)).length})`} />
+          <Tab label={`Income (${filteredTransactions.filter(t => t.transaction_type === 'income').length})`} />
+          <Tab label={`Expenses (${filteredTransactions.filter(t => t.transaction_type === 'expense').length})`} />
+          <Tab label={`Assets (${filteredTransactions.filter(t => ['asset_purchase', 'asset_sale'].includes(t.transaction_type)).length})`} />
         </Tabs>
 
         <TabPanel value={activeTab} index={activeTab}>
@@ -546,29 +517,34 @@ const TransactionList: React.FC = () => {
                 </TableHead>
                 <TableBody>
                   {getTabTransactions(activeTab).map((transaction) => (
-                    <TableRow key={transaction._id} hover>
+                    <TableRow key={transaction.id} hover>
                       <TableCell>
                         <Box>
                           <Typography variant="subtitle2" fontWeight="medium">
-                            {transaction.transactionNumber}
+                            {transaction.transaction_number}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
                             {transaction.description}
                           </Typography>
-                          {transaction.parties.from && (
+                          {transaction.customer_name && (
                             <Typography variant="caption" color="text.secondary">
-                              From: {transaction.parties.from.name}
+                              Customer: {transaction.customer_name}
+                            </Typography>
+                          )}
+                          {transaction.vendor_name && (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              Vendor: {transaction.vendor_name}
                             </Typography>
                           )}
                         </Box>
                       </TableCell>
                       <TableCell>
                         <Box display="flex" alignItems="center">
-                          {getTypeIcon(transaction.type)}
+                          {getTypeIcon(transaction.transaction_type)}
                           <Chip 
-                            label={transaction.type.replace('_', ' ')} 
+                            label={transaction.transaction_type.replace('_', ' ')} 
                             size="small" 
-                            color={getTypeColor(transaction.type) as any}
+                            color={getTypeColor(transaction.transaction_type) as any}
                             sx={{ ml: 1 }}
                           />
                         </Box>
@@ -582,15 +558,15 @@ const TransactionList: React.FC = () => {
                         <Typography 
                           variant="body2" 
                           fontWeight="medium"
-                          color={transaction.type === 'income' ? 'success.main' : 'error.main'}
+                          color={transaction.transaction_type === 'income' ? 'success.main' : 'error.main'}
                         >
-                          {transaction.type === 'income' ? '+' : '-'}
+                          {transaction.transaction_type === 'income' ? '+' : '-'}
                           {formatCurrency(transaction.amount, transaction.currency)}
                         </Typography>
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2">
-                          {formatDate(transaction.date)}
+                          {formatDate(transaction.transaction_date)}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -659,7 +635,7 @@ const TransactionList: React.FC = () => {
         <DialogTitle>Delete Transaction</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete transaction "{selectedTransaction?.transactionNumber}"? This action cannot be undone.
+            Are you sure you want to delete transaction "{selectedTransaction?.transaction_number}"? This action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>

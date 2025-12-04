@@ -45,56 +45,63 @@ import api from '../../services/api';
 import EmployeeForm from './EmployeeForm';
 
 interface Employee {
-  _id: string;
+  id: number;
   user: {
-    _id: string;
-    firstName: string;
-    lastName: string;
+    id: number;
     email: string;
+    first_name: string;
+    last_name: string;
     phone?: string;
   };
-  business: {
-    _id: string;
-    name: string;
-  };
-  employeeId: string;
-  personalInfo: {
-    dateOfBirth: Date;
-    gender?: string;
-    maritalStatus?: string;
-    nationality?: string;
-    emergencyContact?: {
-      name: string;
-      relationship: string;
-      phone: string;
-      address: string;
-    };
-  };
-  employment: {
-    position: string;
-    department: string;
-    startDate: Date;
-    endDate?: Date;
-    employmentType: string;
-    status: string;
-    salary: {
-      amount: number;
-      currency: string;
-      frequency: string;
-    };
-    workSchedule: {
-      hoursPerWeek: number;
-      workDays: string[];
-    };
-  };
-  compliance: {
-    trn?: string;
-    nis?: string;
-    taxExemptionStatus: string;
-    filingStatus: string;
-  };
-  createdAt: string;
-  updatedAt: string;
+  business: number; // Foreign key to business  
+  employee_id: string;
+  full_name: string; // Computed field from backend
+  age?: number; // Computed field from backend
+  employment_status: string; // Computed field from backend
+  
+  // Personal Information
+  date_of_birth: string;
+  gender?: string;
+  marital_status?: string;
+  nationality: string;
+  
+  // Emergency Contact
+  emergency_contact_name?: string;
+  emergency_contact_relationship?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_address?: string;
+  
+  // Employment Information
+  position: string;
+  department: string;
+  start_date: string;
+  end_date?: string;
+  employment_type: string;
+  
+  // Work Schedule
+  hours_per_week: number;
+  start_time?: string;
+  end_time?: string;
+  
+  // Compensation
+  base_salary_amount: number;
+  salary_currency: string;
+  salary_frequency: string;
+  overtime_eligible: boolean;
+  overtime_rate: number;
+  
+  // Tax Information
+  trn: string;
+  nis: string;
+  tax_status: string;
+  dependents: number;
+  
+  // Status
+  is_active: boolean;
+  
+  // Timestamps
+  created_at: string;
+  updated_at: string;
 }
 
 const EmployeeList: React.FC = () => {
@@ -130,8 +137,8 @@ const EmployeeList: React.FC = () => {
   const fetchBusinessesAndEmployees = async () => {
     try {
       // First fetch businesses
-      const businessResponse = await api.get('/businesses');
-      const userBusinesses = businessResponse.data.businesses || [];
+      const businessResponse = await api.get('/businesses/');
+      const userBusinesses = businessResponse.data || [];
       setBusinesses(userBusinesses);
       
       console.log('User businesses:', userBusinesses);
@@ -139,8 +146,8 @@ const EmployeeList: React.FC = () => {
       
       // If user has no selected business but has businesses, select the first one
       if (!user?.selectedBusiness && userBusinesses.length > 0) {
-        console.log('Auto-selecting first business:', userBusinesses[0]._id);
-        selectBusiness(userBusinesses[0]._id);
+        console.log('Auto-selecting first business:', userBusinesses[0].id);
+        selectBusiness(userBusinesses[0].id.toString());
         return; // The useEffect will trigger fetchEmployees
       }
       
@@ -157,12 +164,12 @@ const EmployeeList: React.FC = () => {
   useEffect(() => {
     // Filter employees based on search term
     const filtered = employees.filter(employee =>
-      employee.user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.user.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       employee.user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.employment.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.employment.department.toLowerCase().includes(searchTerm.toLowerCase())
+      employee.employee_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.department.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredEmployees(filtered);
   }, [employees, searchTerm]);
@@ -252,8 +259,8 @@ const EmployeeList: React.FC = () => {
 
     try {
       setDeleting(true);
-      await api.delete(`/employees/${selectedEmployee._id}`);
-      setEmployees(employees.filter(e => e._id !== selectedEmployee._id));
+      await api.delete(`/employees/${selectedEmployee.id}`);
+      setEmployees(employees.filter(e => e.id !== selectedEmployee.id));
       setDeleteDialogOpen(false);
       setSelectedEmployee(null);
     } catch (err: any) {
@@ -403,7 +410,7 @@ const EmployeeList: React.FC = () => {
             </TableHead>
             <TableBody>
               {filteredEmployees.map((employee) => (
-                <TableRow key={employee._id} hover>
+                <TableRow key={employee.id} hover>
                   <TableCell>
                     <Box display="flex" alignItems="center">
                       <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
@@ -411,7 +418,7 @@ const EmployeeList: React.FC = () => {
                       </Avatar>
                       <Box>
                         <Typography variant="subtitle2">
-                          {employee.user.firstName} {employee.user.lastName}
+                          {employee.user.first_name} {employee.user.last_name}
                         </Typography>
                         <Box display="flex" alignItems="center" mt={0.5}>
                           <Email fontSize="small" sx={{ mr: 0.5, color: 'text.secondary' }} />
@@ -432,40 +439,40 @@ const EmployeeList: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" fontWeight="medium">
-                      {employee.employeeId}
+                      {employee.employee_id}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Box display="flex" alignItems="center">
                       <Work fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
                       <Typography variant="body2">
-                        {employee.employment.position}
+                        {employee.position}
                       </Typography>
                     </Box>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {employee.employment.department}
+                      {employee.department}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={employee.employment.status.replace('_', ' ')}
+                      label={employee.employment_status.replace('_', ' ')}
                       size="small"
-                      color={getStatusColor(employee.employment.status) as any}
+                      color={getStatusColor(employee.employment_status) as any}
                     />
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" fontWeight="medium">
-                      {formatCurrency(employee.employment.salary.amount, employee.employment.salary.currency)}
+                      {formatCurrency(employee.base_salary_amount, employee.salary_currency)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      per {employee.employment.salary.frequency}
+                      per {employee.salary_frequency}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {formatDate(employee.employment.startDate.toString())}
+                      {formatDate(employee.start_date)}
                     </Typography>
                   </TableCell>
                   <TableCell align="right">
@@ -525,7 +532,7 @@ const EmployeeList: React.FC = () => {
         <DialogTitle>Remove Employee</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to remove "{selectedEmployee?.user.firstName} {selectedEmployee?.user.lastName}" from your workforce? This action cannot be undone.
+            Are you sure you want to remove "{selectedEmployee?.user.first_name} {selectedEmployee?.user.last_name}" from your workforce? This action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>

@@ -13,7 +13,7 @@ const getApiBaseUrl = () => {
   
   if (isLocalDevelopment) {
     // Local development - use Django dev server port
-    return 'http://localhost:8002/api';
+    return 'http://localhost:8000/api';
   } else {
     // Production (Railway or other deployment)
     return 'https://account-eezy-django-production.up.railway.app/api';
@@ -108,20 +108,23 @@ api.interceptors.response.use(
           throw new Error('No token available');
         }
 
-        // Try to get a new token using the current token
+        // Try to get a new token using the refresh token
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
+
         const response = await axios.post(
           `${API_BASE_URL}/auth/refresh/`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${currentToken}`
-            }
-          }
+          { refreshToken: refreshToken }
         );
 
-        if (response.data?.data?.token) {
-          const { token } = response.data.data;
+        if (response.data?.success && response.data?.data?.token) {
+          const { token, refreshToken: newRefreshToken } = response.data.data;
           localStorage.setItem('token', token);
+          if (newRefreshToken) {
+            localStorage.setItem('refreshToken', newRefreshToken);
+          }
 
           // Update the original request with new token
           originalRequest.headers.Authorization = `Bearer ${token}`;
@@ -242,8 +245,9 @@ export const authApi = {
   }) =>
     api.post('/auth/register/', data),
   
-  // Enhanced registration with business and payment integration
+  // Enhanced registration with comprehensive business and payment integration
   registerWithBusiness: (data: {
+    // User registration data
     email: string;
     password: string;
     password_confirm: string;
@@ -251,15 +255,33 @@ export const authApi = {
     last_name: string;
     role?: string;
     phone?: string;
-    trn?: string;
+    
+    // Business information
+    business_name: string;
+    registration_number: string;
+    trn: string;
+    nis?: string;
+    business_type: string;
+    industry: string;
+    
+    // Business address
+    street: string;
+    city: string;
+    parish: string;
+    postal_code?: string;
+    country?: string;
+    
+    // Business contact
+    business_phone: string;
+    business_email: string;
+    website?: string;
+    
+    // Payment and subscription
     payment_id?: string;
     plan_name?: string;
-    business_name?: string;
-    business_type?: string;
-    industry?: string;
-    parish?: string;
-    address?: string;
-    city?: string;
+    payment_status?: string;
+    payment_amount?: string;
+    payment_currency?: string;
   }) =>
     api.post('/auth/register-with-business/', data),
   

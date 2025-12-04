@@ -23,22 +23,83 @@ import DebugEnvPage from './pages/DebugEnvPage';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
+      main: '#000000', // Pure black
+      light: '#1a1a1a', // Dark gray
+      dark: '#000000',
     },
     secondary: {
-      main: '#dc004e',
+      main: '#C7AE6A', // Elegant gold
+      light: '#e3d6b4', // Light cream gold
+      dark: '#b99a45', // Darker gold
+    },
+    success: {
+      main: '#d5c28f', // Warm gold for success
+    },
+    warning: {
+      main: '#C7AE6A', // Gold for warnings
+    },
+    error: {
+      main: '#b99a45', // Dark gold for errors
     },
     background: {
-      default: '#f5f5f5',
+      default: '#e3d6b4', // Light cream background
+      paper: '#ffffff',
+    },
+    text: {
+      primary: '#000000', // Black text
+      secondary: '#1a1a1a', // Dark gray text
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    h1: {
+      fontWeight: 800,
+      letterSpacing: '-0.025em',
+    },
+    h2: {
+      fontWeight: 700,
+      letterSpacing: '-0.025em',
+    },
+    h3: {
+      fontWeight: 700,
+      letterSpacing: '-0.025em',
+    },
     h4: {
       fontWeight: 600,
     },
+    h5: {
+      fontWeight: 600,
+    },
     h6: {
-      fontWeight: 500,
+      fontWeight: 600,
+    },
+    button: {
+      textTransform: 'none',
+      fontWeight: 600,
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          textTransform: 'none',
+          fontWeight: 600,
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: '0 4px 12px rgba(199, 174, 106, 0.25)',
+          },
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 16,
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        },
+      },
     },
   },
 });

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { 
   AppBar,
   Toolbar,
-  Typography,
   Button,
   Box,
   useTheme,
@@ -44,9 +43,17 @@ const Navigation: React.FC<NavigationProps> = ({ onPageChange, currentPage }) =>
 
   // Mobile Drawer
   const drawer = (
-    <Box sx={{ width: 250, pt: 2 }}>
+    <Box sx={{ width: 250, pt: 2, backgroundColor: '#e3d6b4', height: '100%' }}>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
-        <IconButton onClick={() => setMobileDrawerOpen(false)}>
+        <IconButton 
+          onClick={() => setMobileDrawerOpen(false)}
+          sx={{ 
+            color: '#000000',
+            '&:hover': {
+              backgroundColor: alpha('#C7AE6A', 0.1)
+            }
+          }}
+        >
           <Close />
         </IconButton>
       </Box>
@@ -57,18 +64,18 @@ const Navigation: React.FC<NavigationProps> = ({ onPageChange, currentPage }) =>
             component="button"
             onClick={() => handleNavClick(item.value)}
             sx={{
-              backgroundColor: isActive(item.value) ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+              backgroundColor: isActive(item.value) ? alpha('#C7AE6A', 0.15) : 'transparent',
               border: 'none',
               cursor: 'pointer',
               '&:hover': {
-                backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                backgroundColor: alpha('#C7AE6A', 0.1)
               }
             }}
           >
             <ListItemText 
               primary={item.label}
               sx={{
-                color: isActive(item.value) ? theme.palette.primary.main : 'inherit'
+                color: isActive(item.value) ? '#C7AE6A' : '#000000'
               }}
             />
           </ListItem>
@@ -83,11 +90,14 @@ const Navigation: React.FC<NavigationProps> = ({ onPageChange, currentPage }) =>
             border: 'none',
             cursor: 'pointer',
             '&:hover': {
-              backgroundColor: alpha(theme.palette.primary.main, 0.1)
+              backgroundColor: alpha('#C7AE6A', 0.1)
             }
           }}
         >
-          <ListItemText primary="Pricing" />
+          <ListItemText 
+            primary="Pricing"
+            sx={{ color: '#000000' }}
+          />
         </ListItem>
         <ListItem>
           <Box sx={{ width: '100%', pt: 2 }}>
@@ -99,7 +109,7 @@ const Navigation: React.FC<NavigationProps> = ({ onPageChange, currentPage }) =>
                 navigate('/login');
                 setMobileDrawerOpen(false);
               }}
-              sx={{ mb: 1, color: 'black', borderColor: 'black' }}
+              sx={{ mb: 1, color: '#000000', borderColor: '#000000' }}
             >
               Login
             </Button>
@@ -112,9 +122,9 @@ const Navigation: React.FC<NavigationProps> = ({ onPageChange, currentPage }) =>
                 setMobileDrawerOpen(false);
               }}
               sx={{ 
-                backgroundColor: '#fac83e', 
-                color: theme.palette.primary.main, 
-                '&:hover': { backgroundColor: alpha('#fac83e', 0.9) } 
+                backgroundColor: '#C7AE6A', 
+                color: 'white', 
+                '&:hover': { backgroundColor: '#b99a45' } 
               }}
             >
               Get Started
@@ -131,45 +141,52 @@ const Navigation: React.FC<NavigationProps> = ({ onPageChange, currentPage }) =>
         position="static" 
         elevation={0} 
         sx={{ 
-          backgroundColor: '#d9d9d9ff', 
-          justifyContent: 'center', 
-          borderBottom: '1px solid #e0e0e0' 
+          backgroundColor: '#e3d6b4', 
+          justifyContent: 'space-around', 
+          borderBottom: '1px solid #C7AE6A' 
         }}
       >
-        <Toolbar className='navbar'>
-          <Typography 
-            variant="h6" 
-            component="div" 
+        <Toolbar className='navbar' sx={{ px: { xs: 2, md: 4 }, py: 1 }}>
+          <Box 
             sx={{ 
               flexGrow: 1, 
-              color: theme.palette.primary.main, 
-              fontWeight: 'bold',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center'
             }}
             onClick={() => handleNavClick('home')}
           >
             <img 
-              src="/accounteezy-logo-bg.png" 
-              alt="AccountEezy Logo" 
-              style={{ height: 100, width: 180, marginLeft: 8, marginTop: 10 }} 
+              src="/azy-logo.png" 
+              alt="Accountseezy Logo" 
+              style={{ 
+                height: 60, 
+                width: 'auto', 
+                maxWidth: 200,
+                objectFit: 'contain',
+                borderRadius: '15px',
+                justifyContent: 'center',
+              }} 
             />
-          </Typography>
+          </Box>
           
           {/* Desktop Navigation */}
           {!isMobile && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, ml: 2 }}>
               {navItems.map((item) => (
                 <Button
                   key={item.value}
                   onClick={() => handleNavClick(item.value)}
                   sx={{
-                    color: isActive(item.value) ? theme.palette.primary.main : theme.palette.text.primary,
+                    color: isActive(item.value) ? '#C7AE6A' : '#000000',
                     fontWeight: isActive(item.value) ? 'bold' : 'normal',
-                    backgroundColor: isActive(item.value) ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                    backgroundColor: isActive(item.value) ? alpha('#C7AE6A', 0.15) : 'transparent',
                     '&:hover': {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                      backgroundColor: alpha('#C7AE6A', 0.1)
                     },
-                    mx: 0.5
+                    mx: 1,
+                    px: 2,
+                    borderRadius: 1
                   }}
                 >
                   {item.label}
@@ -177,17 +194,32 @@ const Navigation: React.FC<NavigationProps> = ({ onPageChange, currentPage }) =>
               ))}
               
               <Button 
-                color="primary" 
                 onClick={() => navigate('/pricing')}
-                sx={{ mx: 0.5 }}
+                sx={{ 
+                  mx: 1,
+                  px: 2,
+                  color: '#000000',
+                  borderRadius: 1,
+                  '&:hover': {
+                    backgroundColor: alpha('#C7AE6A', 0.1)
+                  }
+                }}
               >
                 Pricing
               </Button>
               
               <Button 
-                color="primary" 
                 onClick={() => navigate('/login')}
-                sx={{ mr: 1, ml: 2 }}
+                sx={{ 
+                  mr: 2, 
+                  ml: 2,
+                  px: 2,
+                  color: '#000000',
+                  borderRadius: 1,
+                  '&:hover': {
+                    backgroundColor: alpha('#C7AE6A', 0.1)
+                  }
+                }}
               >
                 Login
               </Button>
@@ -196,9 +228,13 @@ const Navigation: React.FC<NavigationProps> = ({ onPageChange, currentPage }) =>
                 color="primary"
                 onClick={() => navigate('/pricing')}
                 sx={{ 
-                  backgroundColor: '#fac83e', 
-                  color: theme.palette.primary.main, 
-                  '&:hover': { backgroundColor: alpha('#fac83e', 0.9) } 
+                  backgroundColor: '#C7AE6A', 
+                  color: 'white', 
+                  '&:hover': { backgroundColor: '#b99a45' },
+                  borderRadius: 2,
+                  fontWeight: 'bold',
+                  px: 3,
+                  py: 1
                 }}
               >
                 Get Started
@@ -209,9 +245,14 @@ const Navigation: React.FC<NavigationProps> = ({ onPageChange, currentPage }) =>
           {/* Mobile Menu Button */}
           {isMobile && (
             <IconButton
-              color="primary"
               onClick={() => setMobileDrawerOpen(true)}
-              sx={{ ml: 2 }}
+              sx={{ 
+                ml: 2,
+                color: '#000000',
+                '&:hover': {
+                  backgroundColor: alpha('#C7AE6A', 0.1)
+                }
+              }}
             >
               <MenuIcon />
             </IconButton>

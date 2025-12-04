@@ -23,9 +23,9 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
 interface Business {
-  _id: string;
-  name: string;
-  registrationNumber: string;
+  id: number;
+  business_name: string;
+  registration_number: string;
 }
 
 interface TransactionFormProps {
@@ -43,22 +43,20 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ open, onClose, onSubm
   const [loadingBusinesses, setLoadingBusinesses] = useState(false);
   
   const [formData, setFormData] = useState({
-    businessId: transaction?.business?._id || user?.selectedBusiness || '',
-    type: transaction?.type || 'income',
+    businessId: transaction?.business?.id || user?.selectedBusiness || '',
+    transaction_type: transaction?.transaction_type || 'income',
     category: transaction?.category || '',
     description: transaction?.description || '',
     amount: transaction?.amount || 0,
     currency: transaction?.currency || 'JMD',
-    date: transaction?.date || new Date().toISOString().split('T')[0],
-    paymentMethod: transaction?.paymentMethod || 'cash',
-    referenceNumber: transaction?.referenceNumber || '',
-    fromName: transaction?.parties?.from?.name || '',
-    fromType: transaction?.parties?.from?.type || 'customer',
-    toName: transaction?.parties?.to?.name || '',
-    toType: transaction?.parties?.to?.type || 'supplier',
-    isTaxable: transaction?.tax?.isTaxable || false,
-    gctRate: transaction?.tax?.gct?.rate || 16.5,
-    status: transaction?.status || 'pending'
+    transaction_date: transaction?.transaction_date || new Date().toISOString().split('T')[0],
+    payment_method: transaction?.payment_method || 'cash',
+    reference: transaction?.reference || '',
+    vendor_name: transaction?.vendor_name || '',
+    customer_name: transaction?.customer_name || '',
+    is_taxable: transaction?.is_taxable || false,
+    gct_rate: transaction?.gct_rate || 0.15,
+    status: transaction?.status || 'completed'
   });
 
   useEffect(() => {
@@ -70,8 +68,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ open, onClose, onSubm
   const fetchBusinesses = async () => {
     try {
       setLoadingBusinesses(true);
-      const response = await api.get('/businesses');
-      setBusinesses(response.data.businesses || []);
+      const response = await api.get('/businesses/');
+      setBusinesses(response.data || []);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch businesses');
     } finally {
@@ -96,7 +94,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ open, onClose, onSubm
       setLoading(false);
       return;
     }
-    if (!formData.type) {
+    if (!formData.transaction_type) {
       setError('Transaction type is required.');
       setLoading(false);
       return;
@@ -121,12 +119,12 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ open, onClose, onSubm
       setLoading(false);
       return;
     }
-    if (!formData.date) {
+    if (!formData.transaction_date) {
       setError('Date is required.');
       setLoading(false);
       return;
     }
-    if (!formData.paymentMethod) {
+    if (!formData.payment_method) {
       setError('Payment method is required.');
       setLoading(false);
       return;
@@ -135,36 +133,23 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ open, onClose, onSubm
     // Sanitize and map fields
     const transactionData = {
       business: formData.businessId,
-      type: formData.type,
+      transaction_type: formData.transaction_type,
       category: formData.category.trim(),
       description: formData.description.trim(),
       amount: Number(formData.amount),
       currency: formData.currency,
-      date: new Date(formData.date),
-      paymentMethod: formData.paymentMethod,
-      reference: formData.referenceNumber?.trim() || undefined,
-      ...(formData.fromName && {
-        customer: {
-          name: formData.fromName.trim(),
-          type: formData.fromType
-        }
-      }),
-      ...(formData.toName && {
-        vendor: {
-          name: formData.toName.trim(),
-          type: formData.toType
-        }
-      }),
-      taxInfo: {
-        isTaxable: !!formData.isTaxable,
-        gctRate: formData.isTaxable ? formData.gctRate / 100 : 0,
-        gctAmount: formData.isTaxable ? (formData.amount * formData.gctRate) / 100 : 0
-      },
+      transaction_date: formData.transaction_date,
+      payment_method: formData.payment_method,
+      reference: formData.reference?.trim() || undefined,
+      vendor_name: formData.vendor_name?.trim() || undefined,
+      customer_name: formData.customer_name?.trim() || undefined,
+      is_taxable: !!formData.is_taxable,
+      gct_rate: formData.is_taxable ? formData.gct_rate : 0,
       status: formData.status
     };
 
     try {
-      const endpoint = transaction ? `/transactions/${transaction._id}` : '/transactions';
+      const endpoint = transaction ? `/transactions/${formData.businessId}/${transaction.id}/` : `/transactions/${formData.businessId}/`;
       const method = transaction ? 'put' : 'post';
       await api[method](endpoint, transactionData);
       onSubmit();
@@ -207,13 +192,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ open, onClose, onSubm
     { value: 'other', label: 'Other' }
   ];
 
-  const partyTypes = [
-    { value: 'customer', label: 'Customer' },
-    { value: 'supplier', label: 'Supplier' },
-    { value: 'employee', label: 'Employee' },
-    { value: 'bank', label: 'Bank' },
-    { value: 'other', label: 'Other' }
-  ];
+
 
   const statusOptions = [
     { value: 'pending', label: 'Pending' },
@@ -250,8 +229,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ open, onClose, onSubm
                 </MenuItem>
               ) : (
                 businesses.map((business) => (
-                  <MenuItem key={business._id} value={business._id}>
-                    {business.name} ({business.registrationNumber})
+                  <MenuItem key={business.id} value={business.id}>
+                    {business.business_name} ({business.registration_number})
                   </MenuItem>
                 ))
               )}
@@ -262,9 +241,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ open, onClose, onSubm
             <FormControl fullWidth required>
               <InputLabel>Transaction Type *</InputLabel>
               <Select
-                value={formData.type}
+                value={formData.transaction_type}
                 label="Transaction Type *"
-                onChange={(e) => handleInputChange('type', e.target.value)}
+                onChange={(e) => handleInputChange('transaction_type', e.target.value)}
               >
                 {transactionTypes.map((type) => (
                   <MenuItem key={type.value} value={type.value}>
@@ -327,8 +306,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ open, onClose, onSubm
             <TextField
               label="Transaction Date *"
               type="date"
-              value={formData.date}
-              onChange={(e) => handleInputChange('date', e.target.value)}
+              value={formData.transaction_date}
+              onChange={(e) => handleInputChange('transaction_date', e.target.value)}
               fullWidth
               required
               InputLabelProps={{
@@ -339,9 +318,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ open, onClose, onSubm
             <FormControl fullWidth>
               <InputLabel>Payment Method</InputLabel>
               <Select
-                value={formData.paymentMethod}
+                value={formData.payment_method}
                 label="Payment Method"
-                onChange={(e) => handleInputChange('paymentMethod', e.target.value)}
+                onChange={(e) => handleInputChange('payment_method', e.target.value)}
               >
                 {paymentMethods.map((method) => (
                   <MenuItem key={method.value} value={method.value}>
@@ -354,8 +333,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ open, onClose, onSubm
 
           <TextField
             label="Reference Number"
-            value={formData.referenceNumber}
-            onChange={(e) => handleInputChange('referenceNumber', e.target.value)}
+            value={formData.reference}
+            onChange={(e) => handleInputChange('reference', e.target.value)}
             fullWidth
             placeholder="Invoice number, receipt number, etc."
           />
@@ -367,55 +346,21 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ open, onClose, onSubm
           </Divider>
 
           <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
-            <Box>
-              <TextField
-                label="From (Payer)"
-                value={formData.fromName}
-                onChange={(e) => handleInputChange('fromName', e.target.value)}
-                fullWidth
-                placeholder="Who paid/sent the money"
-                sx={{ mb: 1 }}
-              />
-              <FormControl fullWidth>
-                <InputLabel>From Type</InputLabel>
-                <Select
-                  value={formData.fromType}
-                  label="From Type"
-                  onChange={(e) => handleInputChange('fromType', e.target.value)}
-                >
-                  {partyTypes.map((type) => (
-                    <MenuItem key={type.value} value={type.value}>
-                      {type.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
+            <TextField
+              label="Customer Name"
+              value={formData.customer_name}
+              onChange={(e) => handleInputChange('customer_name', e.target.value)}
+              fullWidth
+              placeholder="Customer or payer name"
+            />
 
-            <Box>
-              <TextField
-                label="To (Payee)"
-                value={formData.toName}
-                onChange={(e) => handleInputChange('toName', e.target.value)}
-                fullWidth
-                placeholder="Who received the money"
-                sx={{ mb: 1 }}
-              />
-              <FormControl fullWidth>
-                <InputLabel>To Type</InputLabel>
-                <Select
-                  value={formData.toType}
-                  label="To Type"
-                  onChange={(e) => handleInputChange('toType', e.target.value)}
-                >
-                  {partyTypes.map((type) => (
-                    <MenuItem key={type.value} value={type.value}>
-                      {type.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
+            <TextField
+              label="Vendor Name"
+              value={formData.vendor_name}
+              onChange={(e) => handleInputChange('vendor_name', e.target.value)}
+              fullWidth
+              placeholder="Vendor or payee name"
+            />
           </Box>
 
           <Divider sx={{ my: 2 }}>
@@ -427,28 +372,27 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ open, onClose, onSubm
           <FormControlLabel
             control={
               <Switch
-                checked={formData.isTaxable}
-                onChange={(e) => handleInputChange('isTaxable', e.target.checked)}
+                checked={formData.is_taxable}
+                onChange={(e) => handleInputChange('is_taxable', e.target.checked)}
               />
             }
             label="This transaction is taxable"
           />
 
-          {formData.isTaxable && (
+          {formData.is_taxable && (
             <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2}>
               <TextField
-                label="GCT Rate (%)"
+                label="GCT Rate (as decimal)"
                 type="number"
-                value={formData.gctRate}
-                onChange={(e) => handleInputChange('gctRate', parseFloat(e.target.value) || 0)}
+                value={formData.gct_rate}
+                onChange={(e) => handleInputChange('gct_rate', parseFloat(e.target.value) || 0)}
                 fullWidth
-                InputProps={{
-                  endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                }}
+                inputProps={{ step: 0.01 }}
+                helperText="Enter as decimal (e.g., 0.15 for 15%)"
               />
               <TextField
                 label="GCT Amount"
-                value={((formData.amount * formData.gctRate) / 100).toFixed(2)}
+                value={(formData.amount * formData.gct_rate).toFixed(2)}
                 fullWidth
                 disabled
                 InputProps={{

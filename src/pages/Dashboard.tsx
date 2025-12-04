@@ -70,7 +70,7 @@ function a11yProps(index: number) {
 }
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, selectBusiness } = useAuth();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [tabValue, setTabValue] = useState(0);
@@ -80,6 +80,7 @@ const Dashboard: React.FC = () => {
     totalEmployees: 0,
     monthlyPayroll: 0,
     pendingTransactions: 0,
+    businessStatus: 'inactive',
     loading: true
   });
 
@@ -89,22 +90,66 @@ const Dashboard: React.FC = () => {
       try {
         setDashboardData(prev => ({ ...prev, loading: true }));
         
-        // Fetch dashboard summary data
-        const summaryResponse = await api.get('/dashboard/summary');
-        const summaryData = summaryResponse.data.data.summary;
-        const businessesData = summaryResponse.data.data.businesses;
+        // Check authentication
+        console.log('Current user:', user);
+        console.log('User email:', user?.email);
+        console.log('Selected business:', user?.selectedBusiness);
         
-        setBusinesses(businessesData);
+        // Fetch businesses data directly
+        console.log('Fetching businesses from API...');
+        const businessResponse = await api.get('/businesses/');
+        console.log('Business API Response:', businessResponse);
+        console.log('Business Response Data:', businessResponse.data);
+        const businessesData = businessResponse.data || [];
+        console.log('Processed businesses data:', businessesData);
+        console.log('Number of businesses found:', businessesData.length);
+        
+        // Fetch dashboard summary data
+        let summaryData = {
+          totalBusinesses: businessesData.length,
+          totalEmployees: 0,
+          monthlyPayroll: 0,
+          pendingTransactions: 0
+        };
+        
+        try {
+          const summaryResponse = await api.get('/dashboard/summary');
+          if (summaryResponse.data.data && summaryResponse.data.data.summary) {
+            summaryData = summaryResponse.data.data.summary;
+          }
+        } catch (summaryError) {
+          console.log('Dashboard summary not available, using basic data');
+        }
+        
+        // Calculate business status based on subscription and payment
+        let businessStatus = 'inactive';
+        if (businessesData && businessesData.length > 0) {
+          const business = businessesData[0];
+          businessStatus = (business.subscription_status === 'active' || business.payment_status === 'paid') ? 'active' : 'inactive';
+          
+          // Auto-select the first business if user doesn't have one selected
+          if (!user?.selectedBusiness && business.id) {
+            selectBusiness(business.id.toString());
+          }
+        }
+
+        setBusinesses(businessesData || []);
         setDashboardData({
           totalBusinesses: summaryData.totalBusinesses,
           totalEmployees: summaryData.totalEmployees,
           monthlyPayroll: summaryData.monthlyPayroll,
           pendingTransactions: summaryData.pendingTransactions,
+          businessStatus: businessStatus,
           loading: false
         });
 
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to fetch dashboard data:', error);
+        console.error('Error details:', error);
+        if (error.response) {
+          console.error('Error response status:', error.response.status);
+          console.error('Error response data:', error.response.data);
+        }
         setDashboardData(prev => ({ ...prev, loading: false }));
       }
     };
@@ -112,7 +157,7 @@ const Dashboard: React.FC = () => {
     if (user) {
       fetchDashboardData();
     }
-  }, [user]);
+  }, [user, selectBusiness]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -137,10 +182,10 @@ const Dashboard: React.FC = () => {
   return (
     <Box sx={{ flexGrow: 1 }}>
       {/* App Bar */}
-      <AppBar position="static" sx={{ bgcolor: '#006633' }}>
+      <AppBar position="static" sx={{ bgcolor: '#000000' }}>
         <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            AccountEezy - Business Financial Management
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: '#C7AE6A' }}>
+            Accountseezy - Business Financial Management
           </Typography>
           <Chip 
             label={user?.role || 'User'} 
@@ -193,7 +238,7 @@ const Dashboard: React.FC = () => {
         </MenuItem>
         <LogoutButton 
           variant="menuItem" 
-          redirectTo="/landingpage"
+          redirectTo="/"
           onLogout={handleMenuClose}
         />
       </Menu>
@@ -219,31 +264,11 @@ const Dashboard: React.FC = () => {
 
         {/* Tab Panels */}
         <TabPanel value={tabValue} index={0}>
-          {/* Business Selection Warning */}
-          {!user?.selectedBusiness && (
-            <Alert 
-              severity="warning" 
-              sx={{ mb: 3 }}
-              action={
-                <Button 
-                  color="inherit" 
-                  size="small"
-                  onClick={() => navigate('/businesses')}
-                >
-                  Select Business
-                </Button>
-              }
-            >
-              <AlertTitle>No Business Selected</AlertTitle>
-              Some features may be limited without selecting a business. Please create or select a business to access all functionality.
-            </Alert>
-          )}
-
           {/* Current Business Display */}
-          {user?.selectedBusiness && businesses.length > 0 && (
+          {businesses.length > 0 && (
             <Alert severity="success" sx={{ mb: 3 }}>
               <AlertTitle>Current Business</AlertTitle>
-              Working with: {businesses.find(b => b._id === user.selectedBusiness)?.name || 'Selected Business'}
+              Working with: {businesses.find(b => b._id === user?.selectedBusiness || b.id === parseInt(user?.selectedBusiness || '0'))?.business_name || businesses[0]?.business_name || 'Your Business'}
             </Alert>
           )}
 
@@ -263,15 +288,24 @@ const Dashboard: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
                   <Typography color="textSecondary" gutterBottom variant="body2">
-                    Total Businesses
+                    Business Status
                   </Typography>
-                  <Typography variant="h4">
+                  <Typography variant="h5" sx={{ 
+                    color: dashboardData.loading ? '#666' : 
+                           dashboardData.businessStatus === 'active' ? '#4caf50' : '#f44336',
+                    fontWeight: 'bold'
+                  }}>
                     {dashboardData.loading ? (
                       <CircularProgress size={24} />
-                    ) : (
-                      dashboardData.totalBusinesses
-                    )}
+                    ) : businesses.length > 0 ? (
+                      dashboardData.businessStatus === 'active' ? 'Active' : 'Inactive'
+                    ) : 'No Business'}
                   </Typography>
+                  {businesses.length > 0 && (
+                    <Typography variant="caption" color="textSecondary">
+                      {businesses[0]?.subscription_plan || 'Basic'} Plan
+                    </Typography>
+                  )}
                 </Box>
                 <Business sx={{ fontSize: 40, color: '#1976d2' }} />
               </Box>
@@ -366,17 +400,19 @@ const Dashboard: React.FC = () => {
                 <Business sx={{ fontSize: 48 }} />
               </Box>
               <Typography variant="h6" gutterBottom>
-                Add Business
+                {businesses.length > 0 ? 'View/Edit Business' : 'Add Business'}
               </Typography>
               <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                Register a new business entity
+                {businesses.length > 0 
+                  ? `Manage your business information and settings${businesses[0]?.subscription_status ? ` (${businesses[0].subscription_status === 'active' || businesses[0]?.payment_status === 'paid' ? 'Active' : 'Inactive'})` : ''}` 
+                  : 'Register a new business entity'}
               </Typography>
               <Button 
                 variant="contained" 
                 sx={{ bgcolor: '#1976d2' }}
                 onClick={() => navigate('/businesses')}
               >
-                Open
+                {businesses.length > 0 ? 'Manage' : 'Create'}
               </Button>
             </CardContent>
           </Card>
@@ -496,25 +532,25 @@ const Dashboard: React.FC = () => {
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>
-          {user?.selectedBusiness ? (
-            <SubscriptionManager businessId={user.selectedBusiness} />
+          {businesses.length > 0 ? (
+            <SubscriptionManager businessId={user?.selectedBusiness || businesses[0]?.id?.toString()} />
           ) : (
             <Paper sx={{ p: 4, textAlign: 'center' }}>
               <Business sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
               <Typography variant="h6" gutterBottom>
-                No Business Selected
+                No Business Found
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                Please create or select a business to manage subscriptions and access all features.
+                Please complete the registration process to create your business and manage subscriptions.
               </Typography>
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
                 <Button
                   variant="contained"
                   color="primary"
-                  onClick={() => navigate('/businesses')}
+                  onClick={() => navigate('/register')}
                   startIcon={<Business />}
                 >
-                  Manage Businesses
+                  Complete Registration
                 </Button>
                 <Button
                   variant="outlined"

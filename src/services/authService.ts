@@ -25,6 +25,44 @@ export interface RegisterData {
   trn?: string;
 }
 
+export interface RegisterWithBusinessData {
+  // User registration data
+  email: string;
+  password: string;
+  password_confirm: string;
+  first_name: string;
+  last_name: string;
+  role?: string;
+  phone?: string;
+  
+  // Business information
+  business_name: string;
+  registration_number: string;
+  trn: string;
+  nis?: string;
+  business_type: string;
+  industry: string;
+  
+  // Business address
+  street: string;
+  city: string;
+  parish: string;
+  postal_code?: string;
+  country?: string;
+  
+  // Business contact
+  business_phone: string;
+  business_email: string;
+  website?: string;
+  
+  // Payment and subscription
+  payment_id?: string;
+  plan_name?: string;
+  payment_status?: string;
+  payment_amount?: string;
+  payment_currency?: string;
+}
+
 export interface AuthResponse {
   success: boolean;
   message: string;
@@ -106,6 +144,41 @@ export const authService = {
       return response.data;
     } catch (error: any) {
       console.error('authService: Registration error:', error);
+      console.error('authService: Error response:', error.response?.data);
+      console.error('authService: Error status:', error.response?.status);
+      throw error;
+    }
+  },
+
+  // Register new user with comprehensive business information
+  registerWithBusiness: async (userData: RegisterWithBusinessData): Promise<AuthResponse> => {
+    try {
+      console.log('authService: Making registration with business request to:', '/auth/register-with-business/');
+      console.log('authService: Registration with business data:', userData);
+      console.log('authService: Registration with business data JSON:', JSON.stringify(userData, null, 2));
+      
+      const response = await api.post('/auth/register-with-business/', userData);
+      console.log('authService: Registration with business response status:', response.status);
+      console.log('authService: Registration with business response data:', response.data);
+      
+      if (response.data.success) {
+        const { token, refreshToken, user } = response.data.data;
+        // Store the token without Bearer prefix - let the api service add it
+        localStorage.setItem('token', token);
+        localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        // Also store business info if provided
+        if (response.data.data.business) {
+          localStorage.setItem('businessInfo', JSON.stringify(response.data.data.business));
+        }
+        
+        console.log('authService: Registration with business successful, tokens stored');
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('authService: Registration with business error:', error);
       console.error('authService: Error response:', error.response?.data);
       console.error('authService: Error status:', error.response?.status);
       throw error;

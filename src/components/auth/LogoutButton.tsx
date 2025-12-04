@@ -18,7 +18,7 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({
   size = 'medium',
   color = 'primary',
   text = 'Sign Out',
-  redirectTo = '/landingpage',
+  redirectTo = '/',
   onLogout
 }) => {
   const { logout } = useAuth();

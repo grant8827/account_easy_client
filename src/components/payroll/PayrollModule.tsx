@@ -65,39 +65,45 @@ interface PayrollSummary {
 }
 
 interface PayrollEntry {
-  _id: string;
+  id: number;
   employee: {
-    _id: string;
-    firstName: string;
-    lastName: string;
-    employeeId: string;
+    id: number;
+    first_name: string;
+    last_name: string;
+    employee_id: string;
     position: string;
   };
-  period: string;
-  basicSalary: number;
-  overtime: number;
-  allowances: number;
-  grossPay: number;
-  paye: number;
-  nis: number;
-  educationTax: number;
-  heartTrust: number;
-  otherDeductions: number;
-  totalDeductions: number;
-  netPay: number;
-  status: 'draft' | 'approved' | 'paid';
-  payDate?: string;
-  createdAt: string;
+  payroll_number: string;
+  pay_period_start: string;
+  pay_period_end: string;
+  pay_period_type: string;
+  basic_salary: number;
+  overtime_hours: number;
+  overtime_amount: number;
+  bonus: number;
+  commission: number;
+  gross_earnings: number;
+  regular_hours: number;
+  paye_amount: number;
+  nis_contribution: number;
+  education_tax_amount: number;
+  heart_trust_amount: number;
+  total_deductions: number;
+  net_pay: number;
+  status: 'draft' | 'calculated' | 'approved' | 'paid' | 'cancelled';
+  pay_date: string;
+  is_paid: boolean;
+  created_at: string;
 }
 
 interface Employee {
-  _id: string;
-  firstName: string;
-  lastName: string;
-  employeeId: string;
+  id: number;
+  first_name: string;
+  last_name: string;
+  employee_id: string;
   position: string;
-  basicSalary: number;
-  status: 'active' | 'inactive';
+  base_salary_amount: number;
+  employment_status: 'active' | 'inactive' | 'terminated';
 }
 
 interface TabPanelProps {
@@ -135,7 +141,7 @@ const PayrollModule: React.FC = () => {
   const [processPayrollDialog, setProcessPayrollDialog] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedEntry, setSelectedEntry] = useState<PayrollEntry | null>(null);
-  const [selectedEntries, setSelectedEntries] = useState<string[]>([]);
+  const [selectedEntries, setSelectedEntries] = useState<number[]>([]);
   const [showPayrollProcessor, setShowPayrollProcessor] = useState(false);
 
   const fetchPayrollData = useCallback(async () => {
@@ -191,7 +197,7 @@ const PayrollModule: React.FC = () => {
     }
   };
 
-  const approvePayroll = async (entryId: string) => {
+  const approvePayroll = async (entryId: number) => {
     try {
       await api.patch(`/payroll/entries/${entryId}/approve`);
       await fetchPayrollData();
@@ -200,7 +206,7 @@ const PayrollModule: React.FC = () => {
     }
   };
 
-  const markAsPaid = async (entryId: string) => {
+  const markAsPaid = async (entryId: number) => {
     try {
       await api.patch(`/payroll/entries/${entryId}/paid`);
       await fetchPayrollData();
@@ -211,9 +217,9 @@ const PayrollModule: React.FC = () => {
 
   const filteredEntries = payrollEntries.filter(entry => {
     const matchesSearch = 
-      entry.employee.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.employee.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.employee.employeeId.toLowerCase().includes(searchTerm.toLowerCase());
+      entry.employee.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.employee.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.employee.employee_id.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || entry.status === statusFilter;
     
@@ -230,7 +236,7 @@ const PayrollModule: React.FC = () => {
     setSelectedEntry(null);
   };
 
-  const handleSelectEntry = (entryId: string) => {
+  const handleSelectEntry = (entryId: number) => {
     setSelectedEntries(prev => 
       prev.includes(entryId) 
         ? prev.filter(id => id !== entryId)
@@ -242,14 +248,14 @@ const PayrollModule: React.FC = () => {
     if (selectedEntries.length === filteredEntries.length) {
       setSelectedEntries([]);
     } else {
-      setSelectedEntries(filteredEntries.map(entry => entry._id));
+      setSelectedEntries(filteredEntries.map(entry => entry.id));
     }
   };
 
   const generatePayslip = async (entry: PayrollEntry) => {
     try {
       // Generate individual payslip
-      const response = await api.get(`/payroll/payslip/${entry._id}`, {
+      const response = await api.get(`/payroll/payslip/${entry.id}`, {
         responseType: 'blob'
       });
       
@@ -257,7 +263,7 @@ const PayrollModule: React.FC = () => {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.download = `payslip_${entry.employee.firstName}_${entry.employee.lastName}_${entry.period}.pdf`;
+      link.download = `payslip_${entry.employee.first_name}_${entry.employee.last_name}_${entry.pay_period_start}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -534,52 +540,52 @@ const PayrollModule: React.FC = () => {
                 </TableHead>
                 <TableBody>
                   {filteredEntries.map((entry) => (
-                    <TableRow key={entry._id} hover>
+                    <TableRow key={entry.id} hover>
                       <TableCell>
                         <Checkbox
-                          checked={selectedEntries.includes(entry._id)}
-                          onChange={() => handleSelectEntry(entry._id)}
+                          checked={selectedEntries.includes(entry.id)}
+                          onChange={() => handleSelectEntry(entry.id)}
                         />
                       </TableCell>
                       <TableCell>
                         <Box>
                           <Typography fontWeight="medium">
-                            {entry.employee.firstName} {entry.employee.lastName}
+                            {entry.employee.first_name} {entry.employee.last_name}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            ID: {entry.employee.employeeId}
+                            ID: {entry.employee.employee_id}
                           </Typography>
                         </Box>
                       </TableCell>
                       <TableCell>{entry.employee.position}</TableCell>
                       <TableCell align="right">
                         <Typography fontWeight="medium">
-                          {formatCurrency(entry.basicSalary)}
+                          {formatCurrency(entry.basic_salary)}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
                         <Typography color="info.main">
-                          {formatCurrency(entry.overtime)}
+                          {formatCurrency(entry.overtime_amount)}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
                         <Typography color="success.main">
-                          {formatCurrency(entry.allowances)}
+                          {formatCurrency(entry.bonus)}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
                         <Typography fontWeight="bold">
-                          {formatCurrency(entry.grossPay)}
+                          {formatCurrency(entry.gross_earnings)}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
                         <Typography color="error.main">
-                          {formatCurrency(entry.totalDeductions)}
+                          {formatCurrency(entry.total_deductions)}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
                         <Typography fontWeight="bold" color="success.main">
-                          {formatCurrency(entry.netPay)}
+                          {formatCurrency(entry.net_pay)}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -757,27 +763,27 @@ const PayrollModule: React.FC = () => {
                 <TableBody>
                   {employees.map((employee) => {
                     const employeeEntries = payrollEntries.filter(
-                      entry => entry.employee._id === employee._id
+                      entry => entry.employee.id === employee.id
                     );
-                    const ytdGross = employeeEntries.reduce((sum, entry) => sum + entry.grossPay, 0);
-                    const ytdTax = employeeEntries.reduce((sum, entry) => sum + entry.totalDeductions, 0);
-                    const ytdNet = employeeEntries.reduce((sum, entry) => sum + entry.netPay, 0);
+                    const ytdGross = employeeEntries.reduce((sum, entry) => sum + entry.gross_earnings, 0);
+                    const ytdTax = employeeEntries.reduce((sum, entry) => sum + entry.total_deductions, 0);
+                    const ytdNet = employeeEntries.reduce((sum, entry) => sum + entry.net_pay, 0);
 
                     return (
-                      <TableRow key={employee._id} hover>
+                      <TableRow key={employee.id} hover>
                         <TableCell>
                           <Box>
                             <Typography fontWeight="medium">
-                              {employee.firstName} {employee.lastName}
+                              {employee.first_name} {employee.last_name}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              ID: {employee.employeeId}
+                              ID: {employee.employee_id}
                             </Typography>
                           </Box>
                         </TableCell>
                         <TableCell>{employee.position}</TableCell>
                         <TableCell align="right">
-                          {formatCurrency(employee.basicSalary)}
+                          {formatCurrency(employee.base_salary_amount || 0)}
                         </TableCell>
                         <TableCell align="right">
                           {formatCurrency(ytdGross)}
@@ -792,9 +798,9 @@ const PayrollModule: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <Chip
-                            label={employee.status}
+                            label={employee.employment_status}
                             size="small"
-                            color={employee.status === 'active' ? 'success' : 'default'}
+                            color={employee.employment_status === 'active' ? 'success' : 'default'}
                           />
                         </TableCell>
                       </TableRow>
@@ -913,7 +919,7 @@ const PayrollModule: React.FC = () => {
       >
         {selectedEntry?.status === 'draft' && (
           <MenuItem onClick={() => {
-            approvePayroll(selectedEntry._id);
+            approvePayroll(selectedEntry.id);
             handleMenuClose();
           }}>
             <ListItemIcon><CheckCircle /></ListItemIcon>
@@ -922,7 +928,7 @@ const PayrollModule: React.FC = () => {
         )}
         {selectedEntry?.status === 'approved' && (
           <MenuItem onClick={() => {
-            markAsPaid(selectedEntry._id);
+            markAsPaid(selectedEntry.id);
             handleMenuClose();
           }}>
             <ListItemIcon><Payment /></ListItemIcon>
