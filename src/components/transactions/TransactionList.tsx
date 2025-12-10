@@ -161,11 +161,52 @@ const TransactionList: React.FC = () => {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
+      
+      // Check if user is authenticated
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Please log in to view transactions');
+        setTransactions([]);
+        return;
+      }
+      
+      console.log('🔍 Fetching transactions...');
       const response = await api.get('/transactions/all/');
-      setTransactions(response.data || []);
+      console.log('✅ Transactions response:', response.data);
+      console.log('📋 Response structure:', {
+        hasData: !!response.data?.data,
+        hasTransactions: !!response.data?.data?.transactions,
+        directTransactions: !!response.data?.transactions,
+        responseKeys: Object.keys(response.data || {})
+      });
+      
+      const transactionData = response.data?.data?.transactions || response.data?.transactions || [];
+      console.log('📊 Transaction data extracted:', {
+        length: transactionData.length,
+        firstTransaction: transactionData[0],
+        incomeTransactions: transactionData.filter((t: any) => t.transaction_type === 'income').length
+      });
+      
+      setTransactions(transactionData);
       setError(null);
+      
+      console.log(`📊 Loaded ${transactionData.length} transactions`);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch transactions');
+      console.error('❌ Error fetching transactions:', err);
+      console.error('❌ Error details:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message
+      });
+      
+      if (err.response?.status === 401) {
+        setError('Authentication required. Please log in again.');
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('Failed to fetch transactions. Please check your connection.');
+      }
+      setTransactions([]);
     } finally {
       setLoading(false);
     }
@@ -263,13 +304,20 @@ const TransactionList: React.FC = () => {
   };
 
   const calculateTotals = () => {
-    const income = filteredTransactions
-      .filter(t => t.transaction_type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
+    const incomeTransactions = filteredTransactions.filter(t => t.transaction_type === 'income');
+    const expenseTransactions = filteredTransactions.filter(t => t.transaction_type === 'expense');
     
-    const expenses = filteredTransactions
-      .filter(t => t.transaction_type === 'expense')
-      .reduce((sum, t) => sum + t.amount, 0);
+    const income = incomeTransactions.reduce((sum, t) => sum + parseFloat(String(t.amount)), 0);
+    const expenses = expenseTransactions.reduce((sum, t) => sum + parseFloat(String(t.amount)), 0);
+
+    console.log('💰 Calculating totals:', {
+      totalTransactions: filteredTransactions.length,
+      incomeTransactions: incomeTransactions.length,
+      expenseTransactions: expenseTransactions.length,
+      incomeAmounts: incomeTransactions.map(t => ({ id: t.id, amount: t.amount, type: t.transaction_type })),
+      totalIncome: income,
+      totalExpenses: expenses
+    });
 
     return { income, expenses, net: income - expenses };
   };

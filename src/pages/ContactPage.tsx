@@ -18,8 +18,14 @@ import {
   AccessTime,
   Send
 } from '@mui/icons-material';
+import SharedHeader from '../components/SharedHeader';
+import Footer from '../components/Footer';
 
-const ContactPage: React.FC = () => {
+interface ContactPageProps {
+  onPageChange?: (page: string) => void;
+}
+
+const ContactPage: React.FC<ContactPageProps> = ({ onPageChange }) => {
   const theme = useTheme();
   const [formData, setFormData] = useState({
     name: '',
@@ -79,6 +85,7 @@ const ContactPage: React.FC = () => {
 
   return (
     <Box>
+      {!onPageChange && <SharedHeader />}
       {/* Hero Section */}
       <Box
         sx={{
@@ -365,6 +372,8 @@ const ContactPage: React.FC = () => {
           Message sent successfully! We'll get back to you soon.
         </Alert>
       </Snackbar>
+      
+      {!onPageChange && <Footer />}
     </Box>
   );
 };

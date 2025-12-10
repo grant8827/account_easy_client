@@ -36,12 +36,12 @@ interface PayrollProcessorProps {
 }
 
 interface Employee {
-  _id: string;
-  firstName: string;
-  lastName: string;
-  employeeId: string;
+  id: number;
+  first_name: string;
+  last_name: string;
+  employee_id: string;
   position: string;
-  basicSalary: number;
+  base_salary_amount: number;
 }
 
 interface PayrollCalculation {
@@ -81,10 +81,10 @@ const PayrollProcessor: React.FC<PayrollProcessorProps> = ({ open, onClose, onSu
     if (selectedEmployee) {
       const calculatePayroll = async () => {
         try {
-          const employee = employees.find(emp => emp._id === selectedEmployee);
+          const employee = employees.find(emp => emp.id.toString() === selectedEmployee);
           if (!employee) return;
 
-          const basicSalary = employee.basicSalary;
+          const basicSalary = parseFloat(employee.base_salary_amount.toString());
           const hourlyRate = basicSalary / (40 * 4); // Assuming 40 hours/week, 4 weeks/month
           const overtimePay = overtimeHours * hourlyRate * overtimeRate;
           const grossPay = basicSalary + overtimePay + allowances + bonuses;
@@ -123,8 +123,18 @@ const PayrollProcessor: React.FC<PayrollProcessorProps> = ({ open, onClose, onSu
 
   const fetchEmployees = async () => {
     try {
-      const response = await api.get('/employees?status=active');
-      setEmployees(response.data.employees || []);
+      // Get business ID from user context or use first business
+      const businessResponse = await api.get('/businesses/');
+      const businesses = businessResponse.data || [];
+      const businessId = businesses.length > 0 ? businesses[0].id : null;
+      
+      if (!businessId) {
+        setError('No business found. Please create a business first.');
+        return;
+      }
+      
+      const response = await api.get(`/payroll/${businessId}/employees/`);
+      setEmployees(response.data?.data?.employees || []);
     } catch (err: any) {
       setError('Failed to fetch employees');
     }
@@ -159,22 +169,31 @@ const PayrollProcessor: React.FC<PayrollProcessorProps> = ({ open, onClose, onSu
     try {
       setLoading(true);
       setError(null);
+      
+      // Get business ID
+      const businessResponse = await api.get('/businesses/');
+      const businesses = businessResponse.data || [];
+      const businessId = businesses.length > 0 ? businesses[0].id : null;
+      
+      if (!businessId) {
+        setError('No business found. Please create a business first.');
+        return;
+      }
 
-      await api.post('/payroll/process-individual', {
-        employeeId: selectedEmployee,
-        period,
-        basicSalary: calculation.basicSalary,
-        overtime: calculation.overtime,
-        allowances: calculation.allowances,
-        bonuses: calculation.bonuses,
-        otherDeductions: calculation.otherDeductions,
-        grossPay: calculation.grossPay,
-        paye: calculation.paye,
-        nis: calculation.nis,
-        educationTax: calculation.educationTax,
-        heartTrust: calculation.heartTrust,
-        totalDeductions: calculation.totalDeductions,
-        netPay: calculation.netPay
+      await api.post(`/payroll/${businessId}/`, {
+        employee: parseInt(selectedEmployee),
+        pay_period_start: new Date().toISOString().split('T')[0],
+        pay_period_end: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
+        pay_period_type: 'monthly',
+        basic_salary: calculation.basicSalary,
+        overtime_hours: overtimeHours,
+        overtime_rate: overtimeRate,
+        overtime_amount: calculation.overtime,
+        bonus: calculation.bonuses,
+        commission: 0,
+        back_pay: 0,
+        regular_hours: 160, // Default 40 hours/week * 4 weeks
+        pay_date: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0]
       });
       
       onSubmit();
@@ -198,7 +217,7 @@ const PayrollProcessor: React.FC<PayrollProcessorProps> = ({ open, onClose, onSu
     onClose();
   };
 
-  const selectedEmployeeData = employees.find(emp => emp._id === selectedEmployee);
+  const selectedEmployeeData = employees.find(emp => emp.id.toString() === selectedEmployee);
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
@@ -226,13 +245,13 @@ const PayrollProcessor: React.FC<PayrollProcessorProps> = ({ open, onClose, onSu
               onChange={(e) => setSelectedEmployee(e.target.value)}
             >
               {employees.map(employee => (
-                <MenuItem key={employee._id} value={employee._id}>
+                <MenuItem key={employee.id} value={employee.id.toString()}>
                   <Box>
                     <Typography>
-                      {employee.firstName} {employee.lastName}
+                      {employee.first_name} {employee.last_name}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {employee.position} - ID: {employee.employeeId}
+                      {employee.position} - ID: {employee.employee_id}
                     </Typography>
                   </Box>
                 </MenuItem>
@@ -247,10 +266,10 @@ const PayrollProcessor: React.FC<PayrollProcessorProps> = ({ open, onClose, onSu
                   <Person color="primary" />
                   <Box>
                     <Typography variant="h6">
-                      {selectedEmployeeData.firstName} {selectedEmployeeData.lastName}
+                      {selectedEmployeeData.first_name} {selectedEmployeeData.last_name}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {selectedEmployeeData.position} • Basic Salary: {formatCurrency(selectedEmployeeData.basicSalary)}
+                      {selectedEmployeeData.position} • Basic Salary: {formatCurrency(parseFloat(selectedEmployeeData.base_salary_amount.toString()))}
                     </Typography>
                   </Box>
                 </Box>

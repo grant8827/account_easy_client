@@ -33,22 +33,24 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ open, onClose, onSubmit, em
   const [loadingBusiness, setLoadingBusiness] = useState(false);
   
   const [formData, setFormData] = useState({
-    businessId: employee?.business?._id || '',
-    employeeId: employee?.employeeId || '',
-    firstName: employee?.firstName || '',
-    lastName: employee?.lastName || '',
-    email: employee?.email || '',
-    phone: employee?.phone || '',
+    businessId: employee?.business?.id || employee?.business || '',
+    employeeId: employee?.employee_id || '',
+    firstName: employee?.user?.first_name || '',
+    lastName: employee?.user?.last_name || '',
+    email: employee?.user?.email || '',
+    phone: employee?.user?.phone || '',
     position: employee?.position || '',
     department: employee?.department || '',
-    basicSalary: employee?.basicSalary || 0,
+    basicSalary: employee?.base_salary_amount || 0,
     trn: employee?.trn || '',
     nis: employee?.nis || '',
-    dateOfBirth: employee?.dateOfBirth || '1990-01-01'
+    dateOfBirth: employee?.date_of_birth || '1990-01-01'
   });
 
   useEffect(() => {
     if (open) {
+      console.log('🔄 Form opened. Initial formData.businessId:', formData.businessId);
+      console.log('🔄 Employee prop:', employee);
       fetchUserBusiness();
     }
   }, [open]);
@@ -71,13 +73,14 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ open, onClose, onSubmit, em
         console.log('🏢 Selected business:', business);
         
         setUserBusiness(business);
-        // Use 'id' field instead of '_id' since this is Django backend
-        const businessId = business.id || business._id;
+        const businessId = business.id;
+        console.log('✅ Business loaded successfully. ID:', businessId);
+        
+        // Only update businessId if not already set from employee prop
         setFormData(prev => ({
           ...prev,
-          businessId: businessId
+          businessId: prev.businessId || businessId
         }));
-        console.log('✅ Business loaded successfully:', businessId);
       } else {
         console.log('❌ No businesses found in response');
         setError('No business found. Please create a business first.');
@@ -112,11 +115,20 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ open, onClose, onSubmit, em
       setLoading(true);
       setError(null);
 
+      console.log('📋 Form data at submit:', formData);
+      console.log('📋 Employee prop at submit:', employee);
+      
       if (!formData.businessId) {
         setError('Business information is required. Please wait for business data to load or ensure you have a registered business.');
         return;
       }
-      if (!formData.firstName || !formData.lastName || !formData.email || !formData.position || !formData.trn || !formData.nis) {
+      
+      // Validate businessId is a number and not an employee ID
+      if (isNaN(Number(formData.businessId))) {
+        setError('Invalid business ID. Please refresh and try again.');
+        return;
+      }
+      if (!formData.firstName?.trim() || !formData.lastName?.trim() || !formData.email?.trim() || !formData.position?.trim() || !formData.trn || !formData.nis) {
         setError('Please fill in all required fields:\n• First Name\n• Last Name\n• Email\n• Position\n• TRN (9 digits)\n• NIS (9 digits)\n• Date of Birth');
         return;
       }
@@ -135,67 +147,97 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ open, onClose, onSubmit, em
       }
 
       // Create the employee data matching Django backend expectations
-      // Include user data for backend to create user automatically
-      const employeeData = {
-        // User information for automatic user creation
-        user_data: {
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          role: 'employee',
-          password: 'TempPass123!' // Temporary password - should be changed on first login
-        },
-        
-        // Employee information
-        date_of_birth: formData.dateOfBirth,
-        position: formData.position,
-        department: formData.department || 'General',
-        start_date: new Date().toISOString().split('T')[0], // Format as YYYY-MM-DD
-        employment_type: 'full_time',
-        
-        // Compensation
-        base_salary_amount: Math.max(0, formData.basicSalary || 0),
-        salary_currency: 'JMD',
-        salary_frequency: 'monthly',
-        
-        // Tax Information
-        trn: cleanTrn,
-        nis: cleanNis,
-        
-        // Work schedule defaults
-        hours_per_week: 40,
-        work_days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-        
-        // Leave entitlements (defaults)
-        vacation_days_entitlement: 14,
-        sick_days_entitlement: 10,
-        
-        // Auto-generate employee ID if not provided
-        ...(formData.employeeId.trim() && { employee_id: formData.employeeId.trim() })
-      };
+      let employeeData: any;
+      
+      if (employee) {
+        // Update existing employee - don't include user_data
+        employeeData = {
+          date_of_birth: formData.dateOfBirth,
+          position: formData.position,
+          department: formData.department || 'General',
+          employment_type: 'full_time',
+          base_salary_amount: Math.max(0, formData.basicSalary || 0),
+          salary_currency: 'JMD',
+          salary_frequency: 'monthly',
+          trn: cleanTrn,
+          nis: cleanNis,
+          hours_per_week: 40,
+        };
+      } else {
+        // Create new employee - include user_data for automatic user creation
+        employeeData = {
+          user_data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            role: 'employee',
+            password: 'TempPass123!' // Temporary password - should be changed on first login
+          },
+          date_of_birth: formData.dateOfBirth,
+          position: formData.position,
+          department: formData.department || 'General',
+          start_date: new Date().toISOString().split('T')[0], // Format as YYYY-MM-DD
+          employment_type: 'full_time',
+          base_salary_amount: Math.max(0, formData.basicSalary || 0),
+          salary_currency: 'JMD',
+          salary_frequency: 'monthly',
+          trn: cleanTrn,
+          nis: cleanNis,
+          hours_per_week: 40,
+          work_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+          vacation_days_entitlement: 14,
+          sick_days_entitlement: 10,
+          ...(formData.employeeId.trim() && { employee_id: formData.employeeId.trim() })
+        };
+      }
 
-      const endpoint = employee ? `/employees/${formData.businessId}/${employee.id}` : `/employees/${formData.businessId}/`;
-      const method = employee ? 'put' : 'post';
-
-      await api[method](endpoint, employeeData);
+      // Construct the correct endpoint based on whether we're creating or updating
+      console.log('📍 Business ID:', formData.businessId);
+      console.log('📍 Employee ID:', employee?.id);
+      
+      let response;
+      if (employee) {
+        // Update existing employee: PUT /employees/{business_id}/{employee_id}
+        const endpoint = `/employees/${formData.businessId}/${employee.id}`;
+        console.log('📤 PUT to:', endpoint);
+        response = await api.put(endpoint, employeeData);
+      } else {
+        // Create new employee: POST /employees/{business_id}/
+        const endpoint = `/employees/${formData.businessId}/`;
+        console.log('📤 POST to:', endpoint);
+        response = await api.post(endpoint, employeeData);
+      }
       
       onSubmit();
       onClose();
     } catch (err: any) {
       console.error('Employee creation error:', err);
       console.error('Error response data:', err.response?.data);
+      console.error('Error response errors:', err.response?.data?.errors);
+      console.error('Full error object:', JSON.stringify(err.response?.data, null, 2));
       
       const errorData = err.response?.data;
-      if (errorData?.errors && Array.isArray(errorData.errors)) {
-        // Handle detailed validation errors
-        const errorMessages = errorData.errors.map((error: any) => 
-          `${error.field}: ${error.message}`
-        ).join('\n');
-        setError(`Validation errors:\n${errorMessages}`);
-      } else if (errorData?.details && Array.isArray(errorData.details)) {
-        // Handle detailed error descriptions
-        setError(`Validation errors:\n${errorData.details.join('\n')}`);
+      
+      // Handle Django REST framework validation errors
+      if (errorData?.errors) {
+        if (typeof errorData.errors === 'object' && !Array.isArray(errorData.errors)) {
+          // DRF returns errors as an object with field names as keys
+          const errorMessages = Object.entries(errorData.errors)
+            .map(([field, messages]: [string, any]) => {
+              const msgArray = Array.isArray(messages) ? messages : [messages];
+              return `${field}: ${msgArray.join(', ')}`;
+            })
+            .join('\n');
+          setError(`Validation errors:\n${errorMessages}`);
+        } else if (Array.isArray(errorData.errors)) {
+          const errorMessages = errorData.errors.map((error: any) => 
+            typeof error === 'string' ? error : `${error.field}: ${error.message}`
+          ).join('\n');
+          setError(`Validation errors:\n${errorMessages}`);
+        } else {
+          setError(`Error: ${errorData.errors}`);
+        }
       } else if (errorData?.message) {
         setError(errorData.message);
       } else {

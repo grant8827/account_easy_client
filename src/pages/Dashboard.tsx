@@ -125,7 +125,7 @@ const Dashboard: React.FC = () => {
         let businessStatus = 'inactive';
         if (businessesData && businessesData.length > 0) {
           const business = businessesData[0];
-          businessStatus = (business.subscription_status === 'active' || business.payment_status === 'paid') ? 'active' : 'inactive';
+          businessStatus = (business.subscription_status === 'active' || business.subscription_status === 'trial' || business.payment_status === 'paid') ? 'active' : 'inactive';
           
           // Auto-select the first business if user doesn't have one selected
           if (!user?.selectedBusiness && business.id) {
@@ -404,7 +404,7 @@ const Dashboard: React.FC = () => {
               </Typography>
               <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
                 {businesses.length > 0 
-                  ? `Manage your business information and settings${businesses[0]?.subscription_status ? ` (${businesses[0].subscription_status === 'active' || businesses[0]?.payment_status === 'paid' ? 'Active' : 'Inactive'})` : ''}` 
+                  ? `Manage your business information and settings${businesses[0]?.subscription_status ? ` (${businesses[0].subscription_status === 'active' || businesses[0].subscription_status === 'trial' || businesses[0]?.payment_status === 'paid' ? 'Active' : 'Inactive'})` : ''}` 
                   : 'Register a new business entity'}
               </Typography>
               <Button 

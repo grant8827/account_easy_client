@@ -259,7 +259,7 @@ const BusinessList: React.FC = () => {
                               <Chip
                                 label={business.subscription_status}
                                 size="small"
-                                color={business.subscription_status === 'active' ? 'success' : 'warning'}
+                                color={business.subscription_status === 'active' || business.subscription_status === 'trial' ? 'success' : 'warning'}
                               />
                             </Tooltip>
                           )}

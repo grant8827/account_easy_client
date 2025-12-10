@@ -26,6 +26,8 @@ import {
   Security,
   ArrowBack
 } from '@mui/icons-material';
+import SharedHeader from '../components/SharedHeader';
+import Footer from '../components/Footer';
 
 interface SelectedPlan {
   name: string;
@@ -289,46 +291,7 @@ const PaymentPageContent: React.FC<PaymentPageContentProps> = ({
 }) => {
   return (
     <Box>
-      {/* Navigation Bar */}
-      <Box
-        sx={{
-          backgroundColor: '#d9d9d9ff',
-          borderBottom: '1px solid #e0e0e0',
-          py: 1
-        }}
-      >
-        <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box
-              onClick={() => navigate('/')}
-              sx={{ cursor: 'pointer' }}
-            >
-              <img 
-                src="/accounteezy-logo-bg.png" 
-                alt="AccountEezy Logo" 
-                style={{ height: 60, width: 108 }} 
-              />
-            </Box>
-            <Button 
-              startIcon={<ArrowBack />}
-              onClick={() => {
-                // Check if user came from registration (has business info)
-                const businessInfo = localStorage.getItem('businessInfo');
-                if (businessInfo) {
-                  // User came from registration, go back to registration
-                  navigate('/register');
-                } else {
-                  // User came directly, go back to pricing
-                  navigate('/pricing');
-                }
-              }}
-              sx={{ color: theme.palette.primary.main }}
-            >
-              Back
-            </Button>
-          </Box>
-        </Container>
-      </Box>
+      <SharedHeader showAuthButtons={false} />
 
       <Container maxWidth="md" sx={{ py: 4 }}>
         {/* Progress Stepper */}
@@ -493,6 +456,8 @@ const PaymentPageContent: React.FC<PaymentPageContentProps> = ({
           </Card>
         )}
       </Container>
+      
+      <Footer />
     </Box>
   );
 };

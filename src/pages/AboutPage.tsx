@@ -14,8 +14,14 @@ import {
   Support,
   BusinessCenter
 } from '@mui/icons-material';
+import SharedHeader from '../components/SharedHeader';
+import Footer from '../components/Footer';
 
-const AboutPage: React.FC = () => {
+interface AboutPageProps {
+  onPageChange?: (page: string) => void;
+}
+
+const AboutPage: React.FC<AboutPageProps> = ({ onPageChange }) => {
   const theme = useTheme();
 
   const values = [
@@ -50,6 +56,7 @@ const AboutPage: React.FC = () => {
 
   return (
     <Box>
+      {!onPageChange && <SharedHeader />}
       {/* Hero Section */}
       <Box
         sx={{
@@ -333,6 +340,8 @@ const AboutPage: React.FC = () => {
           </Box>
         </Container>
       </Box>
+      
+      {!onPageChange && <Footer />}
     </Box>
   );
 };

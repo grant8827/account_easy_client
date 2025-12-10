@@ -24,6 +24,8 @@ import {
   CloudSync,
   Assessment
 } from '@mui/icons-material';
+import SharedHeader from '../components/SharedHeader';
+import Footer from '../components/Footer';
 
 interface PricingPageProps {
   onPageChange?: (page: string) => void;
@@ -127,48 +129,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onPageChange }) => {
 
   return (
     <Box>
-      {/* Navigation Bar */}
-      <Box
-        sx={{
-          backgroundColor: '#d9d9d9ff',
-          borderBottom: '1px solid #e0e0e0',
-          py: 1
-        }}
-      >
-        <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box
-              onClick={() => navigate('/')}
-              sx={{ cursor: 'pointer' }}
-            >
-              <img 
-                src="/accounteezy-logo-bg.png" 
-                alt="AccountEezy Logo" 
-                style={{ height: 60, width: 108 }} 
-              />
-            </Box>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button 
-                color="primary" 
-                onClick={() => navigate('/login')}
-              >
-                Login
-              </Button>
-              <Button 
-                variant="contained" 
-                onClick={() => navigate('/register')}
-                sx={{ 
-                  backgroundColor: '#fac83e', 
-                  color: theme.palette.primary.main, 
-                  '&:hover': { backgroundColor: '#e6b835' } 
-                }}
-              >
-                Sign Up
-              </Button>
-            </Box>
-          </Box>
-        </Container>
-      </Box>
+      <SharedHeader currentPage="pricing" showAuthButtons={true} />
       
       {/* Hero Section */}
       <Box
@@ -539,6 +500,7 @@ const PricingPage: React.FC<PricingPageProps> = ({ onPageChange }) => {
           </Box>
         </Container>
       </Box>
+      <Footer />
     </Box>
   );
 };

@@ -19,9 +19,9 @@ const LandingPage: React.FC = () => {
       case 'home':
         return <HomePage onPageChange={handlePageChange} />;
       case 'about':
-        return <AboutPage />;
+        return <AboutPage onPageChange={handlePageChange} />;
       case 'contact':
-        return <ContactPage />;
+        return <ContactPage onPageChange={handlePageChange} />;
       default:
         return <HomePage onPageChange={handlePageChange} />;
     }

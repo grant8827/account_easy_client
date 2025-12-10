@@ -40,6 +40,8 @@ import {
   Language,
   GroupWork
 } from '@mui/icons-material';
+import SharedHeader from '../components/SharedHeader';
+import Footer from '../components/Footer';
 
 // Animated Counter Component
 const AnimatedCounter: React.FC<{ end: number; duration?: number; suffix?: string }> = ({ 
@@ -177,6 +179,7 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
 
   return (
     <Box>
+      {!onPageChange && <SharedHeader />}
       {/* Enhanced Hero Section */}
       <Box
         sx={{
@@ -815,6 +818,8 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
           </Box>
         </Container>
       </Box>
+      
+      {!onPageChange && <Footer />}
     </Box>
   );
 };

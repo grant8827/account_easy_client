@@ -193,12 +193,12 @@ const EmployeeList: React.FC = () => {
         return;
       }
       
-      const response = await api.get(`/employees/business/${businessId}`);
+      const response = await api.get(`/employees/${businessId}/`);
       console.log('Employees response:', response.data);
       console.log('Response status:', response.status);
       console.log('Response headers:', response.headers);
       
-      const employeeData = response.data.employees || [];
+      const employeeData = response.data?.data?.employees || response.data?.employees || [];
       console.log('Employee data type:', typeof employeeData);
       console.log('Employee data is array:', Array.isArray(employeeData));
       console.log('Employee data length:', employeeData.length);

@@ -147,15 +147,27 @@ const PayrollModule: React.FC = () => {
   const fetchPayrollData = useCallback(async () => {
     try {
       setLoading(true);
+      
+      // Get business ID from user context or use first business
+      const businessResponse = await api.get('/businesses/');
+      const businesses = businessResponse.data || [];
+      const businessId = businesses.length > 0 ? businesses[0].id : null;
+      
+      if (!businessId) {
+        setError('No business found. Please create a business first.');
+        setLoading(false);
+        return;
+      }
+      
       const [summaryResponse, entriesResponse, employeesResponse] = await Promise.all([
-        api.get(`/payroll/summary?period=${selectedPeriod}`),
-        api.get(`/payroll/entries?period=${selectedPeriod}`),
-        api.get('/employees?status=active')
+        api.get(`/payroll/${businessId}/summary?period=${selectedPeriod}`),
+        api.get(`/payroll/${businessId}?period=${selectedPeriod}`),
+        api.get(`/payroll/${businessId}/employees/`)
       ]);
       
       setPayrollSummary(summaryResponse.data);
-      setPayrollEntries(entriesResponse.data.entries || []);
-      setEmployees(employeesResponse.data.employees || []);
+      setPayrollEntries(entriesResponse.data || []);
+      setEmployees(employeesResponse.data?.data?.employees || []);
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch payroll data');

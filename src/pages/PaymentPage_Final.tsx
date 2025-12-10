@@ -26,6 +26,7 @@ import {
   ArrowBack,
   AccountBalanceWallet
 } from '@mui/icons-material';
+import SharedHeader from '../components/SharedHeader';
 
 interface SelectedPlan {
   name: string;
@@ -112,36 +113,7 @@ const PaymentPage: React.FC = () => {
 
   return (
     <Box>
-      {/* Navigation Bar */}
-      <Box
-        sx={{
-          backgroundColor: '#d9d9d9ff',
-          borderBottom: '1px solid #e0e0e0',
-          py: 1
-        }}
-      >
-        <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box
-              onClick={() => navigate('/')}
-              sx={{ cursor: 'pointer' }}
-            >
-              <img 
-                src="/accounteezy-logo-bg.png" 
-                alt="AccountEezy Logo" 
-                style={{ height: 60, width: 108 }} 
-              />
-            </Box>
-            <Button 
-              startIcon={<ArrowBack />}
-              onClick={() => navigate('/pricing')}
-              sx={{ color: theme.palette.primary.main }}
-            >
-              Back to Pricing
-            </Button>
-          </Box>
-        </Container>
-      </Box>
+      <SharedHeader showAuthButtons={false} />
 
       <Container maxWidth="md" sx={{ py: 4 }}>
         {/* Progress Stepper */}
